@@ -618,36 +618,32 @@
                     </div>
 
                     <div class="relative">
-                        <button onclick="toggleLangMenu(event)" class="flex items-center gap-2 card-bg border px-3.5 py-1.5 rounded-xl text-sm font-semibold hover:opacity-85 transition" title="Змінити мову картки">
+                        <button type="button" onclick="toggleAddCardLangMenu(event)" class="flex items-center gap-2 card-bg border px-3.5 py-1.5 rounded-xl text-sm font-semibold hover:opacity-85 transition" title="Змінити мову картки">
                             <span id="addScreenLangFlag" class="text-base">🇩🇪</span>
                             <span id="addScreenLangLabel">німецька</span>
                             <i class="fa-solid fa-chevron-down text-[10px] muted-text"></i>
                         </button>
+                        <div id="addCardLangDropdown" onclick="event.stopPropagation()" class="hidden menu-anim absolute right-0 mt-2 w-60 card-bg border rounded-2xl shadow-2xl p-1.5 z-50">
+                            <div id="addCardDecksMenuList" class="space-y-1"></div>
+                            <div class="border-t border-[var(--border-line)] mt-1.5 pt-1.5">
+                                <button type="button" onclick="closeAddCardLangMenu(); openNewDeckModal();" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold hover:bg-black/5 transition text-left">
+                                    <i class="fa-solid fa-plus text-xs accent-text"></i>
+                                    <span>Створити нову колоду</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="space-y-3 mb-3">
-                    <!-- ПОЛЕ 1: УКРАЇНСЬКА -->
-                    <div class="card-bg border rounded-2xl px-4 py-3">
-                        <div class="flex items-center justify-between mb-1">
-                            <label class="text-xs font-bold muted-text">українська</label>
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="autoTranslateCard()" id="autoTranslateBtn" class="text-xs font-bold accent-text hover:underline">
-                                    Перекласти
-                                </button>
-                                <button type="button" onclick="document.getElementById('cardTranslationInput').value=''" class="text-xs muted-text hover:opacity-80" title="Очистити">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <input id="cardTranslationInput" type="text" class="w-full bg-transparent text-sm font-medium focus:outline-none" placeholder="Введіть слово або фразу українською...">
-                    </div>
-
-                    <!-- ПОЛЕ 2: ІНОЗЕМНА МОВА -->
+                    <!-- ПОЛЕ 1: ІНОЗЕМНА МОВА -->
                     <div class="card-bg border rounded-2xl px-4 py-3">
                         <div class="flex items-center justify-between mb-1">
                             <label id="labelTargetLang" class="text-xs font-bold muted-text">німецька</label>
                             <div class="flex items-center gap-2">
+                                <button type="button" onclick="autoTranslateCard()" id="autoTranslateBtn" class="text-xs font-bold accent-text hover:underline">
+                                    Перекласти
+                                </button>
                                 <button type="button" onclick="speakText(document.getElementById('cardWordInput').value)" class="text-xs muted-text hover:opacity-80" title="Озвучити">
                                     <i class="fa-solid fa-volume-high"></i>
                                 </button>
@@ -656,7 +652,20 @@
                                 </button>
                             </div>
                         </div>
-                        <input id="cardWordInput" type="text" class="w-full bg-transparent text-sm font-medium focus:outline-none" placeholder="Переклад іноземною мовою...">
+                        <input id="cardWordInput" type="text" class="w-full bg-transparent text-sm font-medium focus:outline-none" placeholder="Введіть слово або фразу іноземною мовою...">
+                    </div>
+
+                    <!-- ПОЛЕ 2: УКРАЇНСЬКА -->
+                    <div class="card-bg border rounded-2xl px-4 py-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-bold muted-text">українська</label>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="document.getElementById('cardTranslationInput').value=''" class="text-xs muted-text hover:opacity-80" title="Очистити">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <input id="cardTranslationInput" type="text" class="w-full bg-transparent text-sm font-medium focus:outline-none" placeholder="Переклад українською...">
                     </div>
 
                     <!-- ПОЛЕ 3: ПРИКЛАД -->
@@ -679,10 +688,14 @@
                     </span>
                 </div>
 
-                <div class="flex justify-center mb-4">
+                <div class="flex flex-wrap items-center justify-center gap-2 mb-4">
                     <button type="button" onclick="toggleExamplesAndGrammar()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl pill-bg text-xs font-bold hover:opacity-85 transition">
                         <i class="fa-solid fa-wand-magic-sparkles accent-text"></i>
                         <span>Приклади та граматика</span>
+                    </button>
+                    <button type="button" onclick="openGeminiKeyModal()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl card-bg border text-xs font-bold hover:opacity-85 transition" title="Налаштувати Gemini API ключ">
+                        <i class="fa-solid fa-key accent-text"></i>
+                        <span id="geminiKeyStatusLabel">AI ключ</span>
                     </button>
                 </div>
 
@@ -735,7 +748,7 @@
                 </div>
 
                 <div class="flex items-center justify-between mb-3">
-                    <h3 class="font-bold text-sm">Друзі та вогники</h3>
+                    <h3 class="font-bold text-sm">Друзі</h3>
                     <button onclick="openAddFriendModal()" class="accent-badge text-xs font-bold px-3 py-1.5 rounded-xl transition">
                         + Знайти друга
                     </button>
@@ -784,6 +797,60 @@
         </nav>
     </div>
 
+    <!-- СТИЛІЗОВАНЕ ВІКНО: СПОЧАТКУ ДОДАЙТЕ КАРТКУ ЧЕРЕЗ + -->
+    <div id="emptyDeckNoticeModal" onclick="closeModal('emptyDeckNoticeModal')" class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="card-bg border rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
+            <div class="w-12 h-12 rounded-2xl accent-badge flex items-center justify-center text-xl mx-auto mb-3">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <h3 class="text-lg font-black mb-1.5">Колода порожня</h3>
+            <p class="text-xs muted-text mb-5">
+                Спочатку додайте картку через <strong>+</strong>.
+            </p>
+            <div class="grid grid-cols-2 gap-2.5">
+                <button type="button" onclick="closeModal('emptyDeckNoticeModal')" class="py-2.5 rounded-2xl pill-bg font-bold text-xs hover:opacity-85 transition">
+                    Закрити
+                </button>
+                <button type="button" onclick="closeModal('emptyDeckNoticeModal'); openAddCardScreen();" class="py-2.5 rounded-2xl accent-btn font-bold text-xs transition">
+                    + Додати картку
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНЕ ВІКНО СТАТИСТИКИ ДРУГА -->
+    <div id="friendStatsModal" onclick="closeModal('friendStatsModal')" class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="card-bg border rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider muted-text">Статистика друга</span>
+                <button type="button" onclick="closeModal('friendStatsModal')" class="w-8 h-8 rounded-full pill-bg flex items-center justify-center hover:opacity-80 transition">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+            <div id="friendStatsAvatar" class="w-14 h-14 rounded-2xl accent-btn font-black flex items-center justify-center text-xl mx-auto mb-2.5">Д</div>
+            <h3 id="friendStatsName" class="text-lg font-black mb-0.5">Друг</h3>
+            <div id="friendStatsEmail" class="text-xs muted-text mb-4"></div>
+
+            <div class="grid grid-cols-2 gap-2.5 mb-5">
+                <div class="pill-bg rounded-2xl p-3">
+                    <div class="text-[11px] font-bold uppercase muted-text mb-1">Загальне XP</div>
+                    <div id="friendStatsXp" class="text-xl font-black accent-text">0</div>
+                </div>
+                <div class="pill-bg rounded-2xl p-3">
+                    <div class="text-[11px] font-bold uppercase muted-text mb-1">Денна серія</div>
+                    <div class="text-xl font-black text-amber-500 flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-fire-flame-curved text-base"></i>
+                        <span id="friendStatsStreak">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" onclick="closeModal('friendStatsModal')" class="w-full py-2.5 rounded-2xl accent-btn font-bold text-xs transition">
+                Закрити
+            </button>
+        </div>
+    </div>
+
     <!-- ВІКНО ПІДТВЕРДЖЕННЯ ВИДАЛЕННЯ КАРТКИ -->
     <div id="deleteCardConfirmModal" onclick="closeModal('deleteCardConfirmModal')" class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
         <div onclick="event.stopPropagation()" class="bg-white text-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
@@ -801,6 +868,35 @@
                 <button type="button" onclick="confirmDeleteCard()" class="py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition">
                     Так, видалити
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНЕ ВІКНО НАЛАШТУВАННЯ GEMINI API КЛЮЧА -->
+    <div id="geminiKeyModal" onclick="closeModal('geminiKeyModal')" class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="bg-white text-slate-900 rounded-3xl p-5 w-full max-w-md shadow-2xl">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-lg font-black">Gemini API ключ</h3>
+                <button type="button" onclick="closeModal('geminiKeyModal')" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed mb-3">
+                Ключ зберігається локально у вашому браузері (<code>localStorage</code>) і використовується для точного ШІ-перекладу, граматичних пояснень та живих прикладів.
+            </p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">API Key (Google AI Studio)</label>
+                    <input id="geminiApiKeyInput" type="password" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="AIzaSy...">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="saveGeminiApiKey()" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-2xl text-xs transition">
+                        Зберегти ключ
+                    </button>
+                    <button type="button" onclick="clearGeminiApiKey()" class="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                        Очистити
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -836,7 +932,11 @@
                     <select id="voiceSelect" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 focus:outline-none"></select>
                 </div>
             </div>
-            <button type="button" onclick="closeModal('optionsModal')" class="w-full mt-5 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-2xl transition text-sm">
+            <button type="button" onclick="closeModal('optionsModal'); openGeminiKeyModal();" class="w-full mt-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2.5 rounded-2xl transition text-xs flex items-center justify-center gap-2">
+                <i class="fa-solid fa-key text-orange-600"></i>
+                <span>Налаштувати Gemini API ключ</span>
+            </button>
+            <button type="button" onclick="closeModal('optionsModal')" class="w-full mt-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-2xl transition text-sm">
                 Готово
             </button>
         </div>
@@ -1511,6 +1611,42 @@
 
         window.closeLangMenu = function () {
             document.getElementById('langDropdown').classList.add("hidden");
+            const addDrop = document.getElementById('addCardLangDropdown');
+            if (addDrop) addDrop.classList.add("hidden");
+        };
+
+        window.closeAddCardLangMenu = function () {
+            const addDrop = document.getElementById('addCardLangDropdown');
+            if (addDrop) addDrop.classList.add("hidden");
+        };
+
+        window.toggleAddCardLangMenu = function (event) {
+            event.stopPropagation();
+            closeThemeDrawer();
+            closeStatsDrawer();
+            document.getElementById('langDropdown').classList.add("hidden");
+
+            const list = document.getElementById('addCardDecksMenuList');
+            const decks = getDecks();
+            const active = getActiveDeck();
+            list.innerHTML = decks.map(deck => {
+                const count = allCards.filter(c => (c.deckId || "de") === deck.id).length;
+                const isSelected = deck.id === active.id;
+                return `
+                    <button type="button" onclick="selectDeck('${escapeAttr(deck.id)}')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition ${isSelected ? 'accent-badge font-bold' : 'hover:bg-black/5'}">
+                        <span class="flex items-center gap-2.5 min-w-0">
+                            <span class="text-base">${escapeHtml(deck.flag || "🌐")}</span>
+                            <span class="truncate">
+                                <span class="block text-xs font-bold leading-tight">${escapeHtml(deck.label)}</span>
+                                <span class="block text-[10px] muted-text leading-tight">${count} карток</span>
+                            </span>
+                        </span>
+                        ${isSelected ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+                    </button>
+                `;
+            }).join("");
+
+            document.getElementById('addCardLangDropdown').classList.toggle("hidden");
         };
 
         document.addEventListener("click", () => closeLangMenu());
@@ -1743,7 +1879,10 @@
         // --- ЕКРАН КАРТОК ---
         window.openFlashcardsScreen = function () {
             const cards = getDeckCards();
-            if (!cards.length) return alert("Спочатку додайте картку через +.");
+            if (!cards.length) {
+                openModal('emptyDeckNoticeModal');
+                return;
+            }
 
             const now = Date.now();
             const due = cards.filter(c => (c.nextReviewAt || 0) <= now);
@@ -1989,7 +2128,7 @@
             setChromeHidden(true);
             document.getElementById('addCardScreen').classList.remove("hidden");
             renderLanguage();
-            setTimeout(() => document.getElementById('cardTranslationInput').focus(), 40);
+            setTimeout(() => document.getElementById('cardWordInput').focus(), 40);
         };
 
         window.closeAddCardScreen = function () {
@@ -2094,48 +2233,238 @@
             }).join("");
         }
 
-        window.toggleExamplesAndGrammar = function () {
+        const GEMINI_KEY_STORAGE = "bol_gemini_api_key";
+
+        function getGeminiApiKey() {
+            try {
+                return (localStorage.getItem(GEMINI_KEY_STORAGE) || "").trim();
+            } catch {
+                return "";
+            }
+        }
+
+        function updateGeminiKeyStatusUI() {
+            const label = document.getElementById('geminiKeyStatusLabel');
+            if (!label) return;
+            const hasKey = Boolean(getGeminiApiKey());
+            label.innerText = hasKey ? "AI активний" : "AI ключ";
+        }
+
+        window.openGeminiKeyModal = function () {
+            const input = document.getElementById('geminiApiKeyInput');
+            if (input) input.value = getGeminiApiKey();
+            openModal('geminiKeyModal');
+        };
+
+        window.saveGeminiApiKey = function () {
+            const val = (document.getElementById('geminiApiKeyInput')?.value || "").trim();
+            try {
+                if (val) {
+                    localStorage.setItem(GEMINI_KEY_STORAGE, val);
+                } else {
+                    localStorage.removeItem(GEMINI_KEY_STORAGE);
+                }
+            } catch {}
+            updateGeminiKeyStatusUI();
+            closeModal('geminiKeyModal');
+        };
+
+        window.clearGeminiApiKey = function () {
+            try {
+                localStorage.removeItem(GEMINI_KEY_STORAGE);
+            } catch {}
+            const input = document.getElementById('geminiApiKeyInput');
+            if (input) input.value = "";
+            updateGeminiKeyStatusUI();
+        };
+
+        async function callGeminiJSON(promptText) {
+            const apiKey = getGeminiApiKey();
+            if (!apiKey) return null;
+
+            const models = ["gemini-2.5-flash", "gemini-2.0-flash"];
+            for (const model of models) {
+                try {
+                    const res = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: promptText }] }],
+                                generationConfig: {
+                                    temperature: 0.25,
+                                    responseMimeType: "application/json"
+                                }
+                            })
+                        }
+                    );
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                    if (!rawText) continue;
+                    const cleaned = rawText.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
+                    return JSON.parse(cleaned);
+                } catch {}
+            }
+            return null;
+        }
+
+        async function translateViaEndpoints(text, sourceLang, targetLang) {
+            // 1. MyMemory API
+            try {
+                const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(sourceLang)}|${encodeURIComponent(targetLang)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const out = data?.responseData?.translatedText;
+                    if (out && !/MYMEMORY WARNING/i.test(out)) {
+                        return out.trim();
+                    }
+                }
+            } catch {}
+
+            // 2. Lingva Translate API
+            try {
+                const res = await fetch(`https://lingva.ml/api/v1/${encodeURIComponent(sourceLang)}/${encodeURIComponent(targetLang)}/${encodeURIComponent(text)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.translation) {
+                        return data.translation.trim();
+                    }
+                }
+            } catch {}
+
+            return "";
+        }
+
+        async function fetchDictionaryMeaning(word, deckCode) {
+            const clean = (word || "").trim().split(/\s+/)[0].replace(/[.,!?;:"]/g, "").toLowerCase();
+            if (!clean) return "";
+            try {
+                if (deckCode === "en") {
+                    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(clean)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        const entry = Array.isArray(data) ? data[0] : null;
+                        const firstMeaning = entry?.meanings?.[0];
+                        const def = firstMeaning?.definitions?.[0]?.definition || "";
+                        const pos = firstMeaning?.partOfSpeech ? ` (${firstMeaning.partOfSpeech})` : "";
+                        if (def) return `${clean}${pos}: ${def}`;
+                    }
+                }
+            } catch {}
+            return "";
+        }
+
+        window.toggleExamplesAndGrammar = async function () {
             const box = document.getElementById('examplesGrammarBox');
             const willOpen = box.classList.contains("hidden");
             if (willOpen) {
-                populateExamplesAndGrammar();
                 box.classList.remove("hidden");
+                await populateExamplesAndGrammar();
             } else {
                 box.classList.add("hidden");
             }
         };
 
-        function populateExamplesAndGrammar() {
-            const word = document.getElementById('cardWordInput').value.trim() || "das Wort";
+        async function populateExamplesAndGrammar() {
+            const word = document.getElementById('cardWordInput').value.trim();
             const tr = document.getElementById('cardTranslationInput').value.trim();
             const deck = getActiveDeck();
+            const hintEl = document.getElementById('grammarHintText');
+            const listEl = document.getElementById('exampleSuggestionsList');
 
-            let grammarNote = `Мова колоди: ${deck.label}. Зверніть увагу на форму слова «${word}»${tr ? ` («${tr}»)` : ""} та контекст у реченні.`;
+            const targetWord = word || tr || "das Wort";
+            hintEl.innerText = getGeminiApiKey()
+                ? "Gemini аналізує слово, граматику та приклади..."
+                : "Аналізую слово та підбираю пояснення і приклади...";
+            listEl.innerHTML = "";
+
+            // Якщо є Gemini API ключ — генеруємо живий розбір і 3 природні приклади
+            if (getGeminiApiKey() && (word || tr)) {
+                const aiPrompt = `Ти мовний репетитор для україномовного учня.
+Мова вивчення: ${deck.label} (код: ${deck.code}).
+Вхідні дані: слово іноземною = "${word}", переклад українською = "${tr}".
+Поверни ТІЛЬКИ валідний JSON без markdown такого формату:
+{
+  "word": "точна базова форма слова або фрази мовою ${deck.label} (для німецьких іменників обов'язково з артиклем der/die/das)",
+  "translation": "точний переклад українською (1-3 основні значення через кому)",
+  "grammar": "стисле, зрозуміле пояснення українською (2-3 речення): частина мови, рід/артикль або керування дієслова, особливості вживання",
+  "examples": [
+    "Природне речення 1 мовою ${deck.label} з цим словом",
+    "Природне речення 2 мовою ${deck.label} з цим словом",
+    "Природне речення 3 мовою ${deck.label} з цим словом"
+  ]
+}`;
+                const aiData = await callGeminiJSON(aiPrompt);
+                if (aiData && aiData.grammar && Array.isArray(aiData.examples) && aiData.examples.length) {
+                    if (!word && aiData.word) {
+                        document.getElementById('cardWordInput').value = aiData.word;
+                    }
+                    if (!tr && aiData.translation) {
+                        document.getElementById('cardTranslationInput').value = aiData.translation;
+                    }
+                    hintEl.innerText = aiData.grammar;
+                    listEl.innerHTML = aiData.examples.slice(0, 3).map(ex => `
+                        <button type="button" onclick="applyExampleToInput('${escapeAttr(ex)}')" class="w-full text-left px-3 py-2 rounded-xl pill-bg text-xs hover:opacity-85 transition flex items-center justify-between gap-2">
+                            <span>${escapeHtml(ex)}</span>
+                            <span class="text-[10px] font-bold accent-text shrink-0">Вставити</span>
+                        </button>
+                    `).join("");
+                    return;
+                }
+            }
+
+            // Fallback, якщо Gemini ключ не вказаний або API тимчасово недоступне
+            let resolvedWord = word;
+            let resolvedUk = tr;
+
+            if (!resolvedWord && resolvedUk) {
+                resolvedWord = await translateViaEndpoints(resolvedUk, "uk", deck.code);
+            } else if (resolvedWord && !resolvedUk) {
+                resolvedUk = await translateViaEndpoints(resolvedWord, deck.code, "uk");
+            }
+
+            const dictInfo = deck.code === "en" && resolvedWord
+                ? await fetchDictionaryMeaning(resolvedWord, deck.code)
+                : "";
+
+            let grammarNote = "";
             let examples = [];
 
             if (deck.code === "de") {
-                grammarNote = `У німецькій мові звертайте увагу на артикль (der / die / das), рід та відмінок слова «${word}»${tr ? ` — «${tr}»` : ""}. Дієслова часто вимагають конкретного прийменника або відмінка.`;
+                const lower = (resolvedWord || "").trim();
+                const hasArticle = /^(der|die|das|ein|eine)\s+/i.test(lower);
+                const isVerb = /(en|n)$/i.test(lower) && !hasArticle;
+                const roleHint = hasArticle
+                    ? "Визначено артикль — зверніть увагу на зміну артикля у Dativ та Akkusativ."
+                    : (isVerb
+                        ? "Схоже на дієслово — перевірте, чи не має воно відокремлюваного префікса (an-, auf-, ein-, mit-, aus-) і який відмінок вимагає."
+                        : "Іменник або інша частина мови — у німецькій іменники завжди пишуться з великої літери та мають рід (der / die / das).");
+
+                grammarNote = `«${resolvedWord || targetWord}»${resolvedUk ? ` — «${resolvedUk}»` : ""}. ${roleHint}`;
                 examples = [
-                    `Ich lerne heute "${word}".`,
-                    `Kannst du mir "${word}" erklären?`,
-                    `Wir benutzen "${word}" im Satz.`
+                    `Ich lerne heute "${resolvedWord || targetWord}".`,
+                    `Kannst du mir "${resolvedWord || targetWord}" im Satz zeigen?`,
+                    `Wir üben "${resolvedWord || targetWord}" jeden Tag.`
                 ];
             } else if (deck.code === "en") {
-                grammarNote = `В англійській мові важливий порядок слів у реченні та артикль/форма для «${word}»${tr ? ` — «${tr}»` : ""}. Одне слово може мати кілька значень залежно від контексту.`;
+                grammarNote = `«${resolvedWord || targetWord}»${resolvedUk ? ` — «${resolvedUk}»` : ""}. ${dictInfo ? dictInfo + " " : ""}Зверніть увагу на контекст вживання, артикль та прийменники у реченні.`;
                 examples = [
-                    `I practice "${word}" every day.`,
-                    `Can you repeat "${word}" slowly?`,
-                    `This is an example with "${word}".`
+                    `I use "${resolvedWord || targetWord}" in conversation.`,
+                    `Can you explain "${resolvedWord || targetWord}" simply?`,
+                    `This is a natural example with "${resolvedWord || targetWord}".`
                 ];
             } else {
+                grammarNote = `Мова колоди: ${deck.label}. Слово «${resolvedWord || targetWord}»${resolvedUk ? ` — «${resolvedUk}»` : ""}. Зверніть увагу на форму слова та контекст у реченні.`;
                 examples = [
-                    `Приклад 1 з "${word}".`,
-                    `Приклад 2 з "${word}".`
+                    `Приклад 1 з "${resolvedWord || targetWord}".`,
+                    `Приклад 2 з "${resolvedWord || targetWord}".`
                 ];
             }
 
-            document.getElementById('grammarHintText').innerText = grammarNote;
-            document.getElementById('exampleSuggestionsList').innerHTML = examples.map(ex => `
+            hintEl.innerText = grammarNote;
+            listEl.innerHTML = examples.map(ex => `
                 <button type="button" onclick="applyExampleToInput('${escapeAttr(ex)}')" class="w-full text-left px-3 py-2 rounded-xl pill-bg text-xs hover:opacity-85 transition flex items-center justify-between gap-2">
                     <span>${escapeHtml(ex)}</span>
                     <span class="text-[10px] font-bold accent-text shrink-0">Вставити</span>
@@ -2164,17 +2493,37 @@
             btn.disabled = true;
             btn.innerText = "...";
             try {
-                if (ukText) {
-                    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(ukText)}&langpair=uk|${deck.code}`);
-                    const data = await res.json();
-                    if (data?.responseData?.translatedText) {
-                        document.getElementById('cardWordInput').value = data.responseData.translatedText.toLowerCase();
+                // Спочатку пробуємо Gemini API, якщо ключ збережено в localStorage
+                if (getGeminiApiKey()) {
+                    const directionPrompt = targetText
+                        ? `Переклади слово або фразу з мови "${deck.label}" (${deck.code}) на українську мову: "${targetText}". Поверни ТІЛЬКИ JSON: {"translation": "точний переклад українською (якщо є 2 основні значення — через кому)"}`
+                        : `Переклади слово або фразу з української мови на мову "${deck.label}" (${deck.code}): "${ukText}". Якщо це німецький іменник, обов'язково додай артикль (der/die/das). Поверни ТІЛЬКИ JSON: {"translation": "точний переклад мовою ${deck.label}"}`;
+
+                    const aiRes = await callGeminiJSON(directionPrompt);
+                    if (aiRes?.translation) {
+                        if (targetText) {
+                            document.getElementById('cardTranslationInput').value = aiRes.translation.trim();
+                        } else {
+                            document.getElementById('cardWordInput').value = aiRes.translation.trim();
+                        }
+                        return;
+                    }
+                }
+
+                // Fallback на безкоштовні словникові/перекладацькі API
+                if (targetText) {
+                    const translated = await translateViaEndpoints(targetText, deck.code, "uk");
+                    if (translated) {
+                        document.getElementById('cardTranslationInput').value = translated;
+                    } else {
+                        alert("Не вдалося перекласти автоматично. Спробуйте ще раз або введіть переклад вручну.");
                     }
                 } else {
-                    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(targetText)}&langpair=${deck.code}|uk`);
-                    const data = await res.json();
-                    if (data?.responseData?.translatedText) {
-                        document.getElementById('cardTranslationInput').value = data.responseData.translatedText.toLowerCase();
+                    const translated = await translateViaEndpoints(ukText, "uk", deck.code);
+                    if (translated) {
+                        document.getElementById('cardWordInput').value = translated;
+                    } else {
+                        alert("Не вдалося перекласти автоматично. Спробуйте ще раз або введіть переклад вручну.");
                     }
                 }
             } catch {
@@ -2184,6 +2533,8 @@
                 btn.innerText = "Перекласти";
             }
         };
+
+        updateGeminiKeyStatusUI();
 
         window.saveNewCard = async function () {
             if (!currentUser) return;
@@ -2397,18 +2748,43 @@
             const name = targetUser.nickname || "Користувач";
 
             if (!userProfile.friends.some(f => f.uid === uid)) {
-                userProfile.friends.push({ uid, name, fires: 0 });
+                userProfile.friends.push({ uid, name, xp: targetUser.xp || 0, streak: targetUser.streak || 0 });
                 await setDoc(doc(db, "users", currentUser.uid), { friends: userProfile.friends }, { merge: true });
                 renderFriends();
             }
             closeModal('addFriendModal');
         };
 
-        window.sendFire = async function (idx) {
-            if (!currentUser || !userProfile.friends[idx]) return;
-            userProfile.friends[idx].fires = (userProfile.friends[idx].fires || 0) + 1;
-            await setDoc(doc(db, "users", currentUser.uid), { friends: userProfile.friends }, { merge: true });
-            renderFriends();
+        window.viewFriendStats = async function (idx) {
+            const friend = userProfile.friends[idx];
+            if (!friend) return;
+
+            let nickname = friend.name || "Друг";
+            let xp = friend.xp ?? 0;
+            let streak = friend.streak ?? 0;
+            let email = friend.email || "";
+
+            if (friend.uid) {
+                try {
+                    const snap = await getDoc(doc(db, "publicProfiles", friend.uid));
+                    if (snap.exists()) {
+                        const d = snap.data();
+                        nickname = d.nickname || nickname;
+                        xp = d.xp ?? xp;
+                        streak = d.streak ?? streak;
+                        email = d.email || email;
+                    }
+                } catch {
+                    // використовуємо збережені дані, якщо мережа недоступна
+                }
+            }
+
+            document.getElementById('friendStatsAvatar').innerText = (nickname[0] || "Д").toUpperCase();
+            document.getElementById('friendStatsName').innerText = nickname;
+            document.getElementById('friendStatsEmail').innerText = email;
+            document.getElementById('friendStatsXp').innerText = xp;
+            document.getElementById('friendStatsStreak').innerText = `${streak} дн.`;
+            openModal('friendStatsModal');
         };
 
         function renderFriends() {
@@ -2418,13 +2794,16 @@
                 return;
             }
             box.innerHTML = userProfile.friends.map((f, i) => `
-                <div class="card-bg border rounded-2xl px-4 py-3 flex items-center justify-between">
-                    <div>
-                        <div class="font-bold text-sm">${escapeHtml(f.name)}</div>
-                        <div class="text-xs muted-text">🔥 ${f.fires || 0}</div>
+                <div onclick="viewFriendStats(${i})" class="card-bg border rounded-2xl px-4 py-3 flex items-center justify-between gap-3 cursor-pointer hover:opacity-90 transition">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-xl accent-badge font-black flex items-center justify-center text-sm shrink-0">
+                            ${escapeHtml((f.name?.[0] || "Д").toUpperCase())}
+                        </div>
+                        <div class="font-bold text-sm truncate">${escapeHtml(f.name)}</div>
                     </div>
-                    <button onclick="sendFire(${i})" class="accent-btn text-xs font-bold px-3 py-2 rounded-xl transition">
-                        🔥 Вогник
+                    <button type="button" onclick="event.stopPropagation(); viewFriendStats(${i})" class="accent-btn text-xs font-bold px-3 py-2 rounded-xl transition shrink-0 flex items-center gap-1.5">
+                        <i class="fa-solid fa-chart-simple text-[11px]"></i>
+                        <span>Статистика</span>
                     </button>
                 </div>
             `).join("");
