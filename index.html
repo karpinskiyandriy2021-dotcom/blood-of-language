@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Blood of Language — інтерактивні картки для вивчення іноземних мов із повторенням, серіями та друзями.">
+    <title>Blood of Language</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            transition: background-color 0.25s ease, color 0.25s ease;
+            overflow-x: hidden;
+        }
+
+        body.theme-light {
+            --bg-main: #ffffff;
+            --bg-card: #f8fafc;
+            --bg-stack-2: #eef2f6;
+            --bg-stack-3: #e2e8f0;
+            --bg-pill: #f1f5f9;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-line: #e2e8f0;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-soft: #eff6ff;
+        }
+
+        body.theme-dark {
+            --bg-main: #181a1f;
+            --bg-card: #22262e;
+            --bg-stack-2: #1c2027;
+            --bg-stack-3: #16191f;
+            --bg-pill: #2c313c;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-line: #333946;
+            --accent: #2b8cbe;
+            --accent-hover: #21739e;
+            --accent-soft: #1b2f3d;
+        }
+
+        body.theme-rose {
+            --bg-main: #fdf2f6;
+            --bg-card: #fff8fa;
+            --bg-stack-2: #fce7ef;
+            --bg-stack-3: #f9d5e3;
+            --bg-pill: #f9d5e3;
+            --text-main: #3b0d1e;
+            --text-muted: #833855;
+            --border-line: #f3c2d5;
+            --accent: #ec4899;
+            --accent-hover: #db2777;
+            --accent-soft: #fce7f3;
+        }
+
+        body.theme-sepia {
+            --bg-main: #faf3e6;
+            --bg-card: #fffdf9;
+            --bg-stack-2: #f7efe0;
+            --bg-stack-3: #f0e4ce;
+            --bg-pill: #f1e6d2;
+            --text-main: #2b2118;
+            --text-muted: #7c6a58;
+            --border-line: #e8dcc6;
+            --accent: #d96b27;
+            --accent-hover: #be5819;
+            --accent-soft: #fef0e6;
+        }
+
+        .app-bg { background-color: var(--bg-main); color: var(--text-main); }
+        .card-bg { background-color: var(--bg-card); border-color: var(--border-line); color: var(--text-main); }
+        .stack-bg-2 { background-color: var(--bg-stack-2); border-color: var(--border-line); }
+        .stack-bg-3 { background-color: var(--bg-stack-3); border-color: var(--border-line); }
+        .pill-bg { background-color: var(--bg-pill); color: var(--text-main); }
+        .muted-text { color: var(--text-muted); }
+        .accent-btn { background-color: var(--accent); color: #ffffff; }
+        .accent-btn:hover { background-color: var(--accent-hover); }
+        .accent-text { color: var(--accent); }
+        .accent-badge { background-color: var(--accent-soft); color: var(--accent); }
+
+        .swatch-auto {
+            background: linear-gradient(135deg, #111827 50%, #ffffff 50%);
+            border: 1px solid #cbd5e1;
+        }
+
+        .card-stage {
+            perspective: 1400px;
+            touch-action: pan-y;
+        }
+
+        .card-3d-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .card-3d-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-3d-face {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            opacity: 1;
+        }
+
+        .card-3d-back {
+            transform: rotateY(180deg);
+        }
+
+        .stack-layer-2 {
+            position: absolute;
+            inset: 0;
+            transform: rotate(2.2deg) translate(7px, -4px);
+            z-index: 10;
+            opacity: 1;
+            transition: transform 0.25s ease;
+        }
+
+        .stack-layer-3 {
+            position: absolute;
+            inset: 0;
+            transform: rotate(-2.4deg) translate(-7px, 5px);
+            z-index: 5;
+            opacity: 1;
+            transition: transform 0.25s ease;
+        }
+
+        .active-card-wrapper {
+            position: relative;
+            z-index: 20;
+            width: 100%;
+            height: 100%;
+            will-change: transform, opacity;
+            transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease;
+        }
+
+        .active-card-wrapper.is-dragging {
+            transition: none;
+        }
+
+        /* Плавний повний виліт картки за межі екрана без застрягання збоку */
+        .active-card-wrapper.swipe-out-right {
+            z-index: 25;
+            pointer-events: none;
+            transform: translate3d(135vw, 24px, 0) rotate(18deg) scale(0.94) !important;
+            opacity: 0;
+            transition: transform 0.34s cubic-bezier(0.25, 0.85, 0.35, 1), opacity 0.28s ease-out;
+        }
+
+        .active-card-wrapper.swipe-out-left {
+            z-index: 25;
+            pointer-events: none;
+            transform: translate3d(-135vw, 24px, 0) rotate(-18deg) scale(0.94) !important;
+            opacity: 0;
+            transition: transform 0.34s cubic-bezier(0.25, 0.85, 0.35, 1), opacity 0.28s ease-out;
+        }
+
+        @keyframes cardPopIn {
+            0% { opacity: 0; transform: scale(0.94) translateY(8px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .card-enter-anim {
+            animation: cardPopIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes popDown {
+            from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .menu-anim {
+            animation: popDown 0.16s ease-out forwards;
+        }
+
+        .history-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+        .history-scroll::-webkit-scrollbar-track {
+            background: var(--bg-pill);
+            border-radius: 9999px;
+        }
+        .history-scroll::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="theme-sepia app-bg min-h-screen w-full flex flex-col select-none">
+
+    <!-- ПОЧАТКОВИЙ ЕКРАН ДЛЯ НОВОГО КОРИСТУВАЧА (ONBOARDING) -->
+    <div id="onboardingScreen" class="fixed inset-0 app-bg z-50 hidden flex-col items-center justify-center p-5 overflow-y-auto">
+        <div class="w-full max-w-lg card-bg border rounded-3xl p-6 sm:p-8 shadow-2xl text-center my-auto">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl accent-badge text-3xl mb-4 shadow-xs">
+                <i class="fa-solid fa-fire-flame-curved"></i>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black mb-2">Ласкаво просимо до Blood of Language!</h1>
+            <p class="text-sm muted-text mb-6 leading-relaxed">
+                Оберіть мову, яку хочете вивчати першою, та налаштуйте оформлення під себе.
+            </p>
+
+            <div class="text-left mb-5">
+                <div class="text-xs font-bold uppercase tracking-wider muted-text mb-2.5">1. Оберіть мову навчання</div>
+                <div class="grid grid-cols-2 gap-2.5" id="onboardingLangGrid">
+                    <button type="button" onclick="selectOnboardingDeck('de')" id="onbDeck_de" class="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-[var(--accent)] accent-badge text-left transition">
+                        <span class="text-2xl">🇩🇪</span>
+                        <div>
+                            <div class="font-black text-sm">Німецька</div>
+                            <div class="text-[11px] opacity-80">Deutsch</div>
+                        </div>
+                    </button>
+                    <button type="button" onclick="selectOnboardingDeck('en')" id="onbDeck_en" class="flex items-center gap-3 p-3.5 rounded-2xl border card-bg text-left hover:opacity-85 transition">
+                        <span class="text-2xl">🇬🇧</span>
+                        <div>
+                            <div class="font-black text-sm">Англійська</div>
+                            <div class="text-[11px] muted-text">English</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-left mb-6">
+                <div class="text-xs font-bold uppercase tracking-wider muted-text mb-2.5">2. Оберіть тему екрана</div>
+                <div class="grid grid-cols-4 gap-2 text-center">
+                    <button type="button" onclick="selectOnboardingTheme('light')" id="onbTheme_light" class="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border card-bg transition">
+                        <span class="w-8 h-8 rounded-xl bg-white border border-slate-300 shadow-xs"></span>
+                        <span class="text-[11px] font-bold">Світла</span>
+                    </button>
+                    <button type="button" onclick="selectOnboardingTheme('dark')" id="onbTheme_dark" class="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border card-bg transition">
+                        <span class="w-8 h-8 rounded-xl bg-zinc-900 border border-zinc-700 shadow-xs"></span>
+                        <span class="text-[11px] font-bold">Темна</span>
+                    </button>
+                    <button type="button" onclick="selectOnboardingTheme('rose')" id="onbTheme_rose" class="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border card-bg transition">
+                        <span class="w-8 h-8 rounded-xl bg-pink-400 border border-pink-500 shadow-xs"></span>
+                        <span class="text-[11px] font-bold">Рожева</span>
+                    </button>
+                    <button type="button" onclick="selectOnboardingTheme('sepia')" id="onbTheme_sepia" class="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border-2 border-[var(--accent)] accent-badge transition">
+                        <span class="w-8 h-8 rounded-xl bg-amber-200 border border-amber-300 shadow-xs"></span>
+                        <span class="text-[11px] font-bold">Сепія</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-2.5">
+                <button type="button" onclick="finishOnboarding(true)" class="w-full accent-btn font-extrabold py-3.5 rounded-2xl shadow-md transition active:scale-[0.99]">
+                    Додати першу картку
+                </button>
+                <button type="button" onclick="finishOnboarding(false)" class="w-full pill-bg font-bold py-3 rounded-2xl text-xs hover:opacity-85 transition">
+                    Перейти на головний екран
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЕКРАН АВТОРИЗАЦІЇ -->
+    <div id="authScreen" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white text-slate-900 rounded-3xl p-6 w-full max-w-md shadow-2xl border border-slate-100">
+            <div class="text-center mb-5">
+                <h2 id="authTitle" class="text-2xl font-black text-slate-900">Вхід у Blood of Language</h2>
+                <p id="authSubtitle" class="text-sm text-slate-500 mt-1">Увійдіть або створіть акаунт для друзів і прогресу</p>
+            </div>
+            <div class="space-y-3.5">
+                <div id="nicknameFieldWrap" class="hidden">
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Нікнейм (для пошуку друзів)</label>
+                    <input type="text" id="authNickname" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Ваш нікнейм">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Email</label>
+                    <input type="email" id="authEmail" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="your@email.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Пароль (мін. 6 символів)</label>
+                    <input type="password" id="authPassword" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="••••••••">
+                </div>
+                <button onclick="handleAuth()" id="authSubmitBtn" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-2xl transition shadow-md">
+                    Увійти
+                </button>
+                <p class="text-center text-sm text-slate-500 pt-1 cursor-pointer hover:text-slate-800 transition" onclick="toggleAuthMode()">
+                    <span id="authSwitchText">Ще немає акаунта? Зареєструватися</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ГОЛОВНИЙ ПОВНОЕКРАННИЙ КОНТЕЙНЕР -->
+    <div id="mainApp" class="app-bg min-h-screen w-full flex flex-col justify-between relative">
+
+        <!-- ВЕРХНЯ ПАНЕЛЬ -->
+        <header id="mainHeader" class="sticky top-0 z-40 border-b card-bg px-4 py-2.5">
+            <div class="max-w-5xl w-full mx-auto flex items-center justify-between relative">
+                <button onclick="toggleThemeDrawer()" class="w-10 h-10 rounded-xl pill-bg flex items-center justify-center hover:opacity-80 transition" title="Теми оформлення">
+                    <i class="fa-solid fa-palette text-base"></i>
+                </button>
+
+                <!-- ВИБІР МОВИ / КОЛОДИ -->
+                <div class="relative">
+                    <button onclick="toggleLangMenu(event)" class="flex items-center gap-2 card-bg border px-3.5 py-1.5 rounded-xl text-sm font-semibold hover:opacity-85 transition" title="Вибір мови">
+                        <span id="langFlag" class="text-base">🇩🇪</span>
+                        <span id="langLabel">німецька</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] muted-text"></i>
+                    </button>
+
+                    <div id="langDropdown" onclick="event.stopPropagation()" class="hidden menu-anim absolute left-1/2 -translate-x-1/2 mt-2 w-60 card-bg border rounded-2xl shadow-2xl p-1.5 z-50">
+                        <div id="decksMenuList" class="space-y-1"></div>
+                        <div class="border-t border-[var(--border-line)] mt-1.5 pt-1.5">
+                            <button onclick="openNewDeckModal()" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold hover:bg-black/5 transition text-left">
+                                <i class="fa-solid fa-plus text-xs accent-text"></i>
+                                <span>Створити нову колоду</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- КНОПКА СТАТИСТИКИ -->
+                <button onclick="toggleStatsDrawer()" id="statsToggleBtn" class="w-10 h-10 rounded-xl pill-bg flex items-center justify-center hover:opacity-80 transition" title="Статистика">
+                    <i class="fa-solid fa-chart-simple text-base"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- ШТОРКА ТЕМ -->
+        <div id="themeBackdrop" onclick="closeThemeDrawer()" class="fixed inset-0 top-[57px] z-30 hidden backdrop-blur-md bg-black/35">
+            <div onclick="event.stopPropagation()" class="menu-anim w-full card-bg border-b shadow-xl py-4 px-4">
+                <div class="max-w-3xl mx-auto grid grid-cols-5 gap-2 sm:gap-4 text-center">
+                    <button onclick="selectTheme('auto')" class="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-black/5 transition">
+                        <span class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl swatch-auto shadow-sm"></span>
+                        <span class="text-[11px] sm:text-xs font-semibold">Автоматично</span>
+                    </button>
+                    <button onclick="selectTheme('light')" class="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-black/5 transition">
+                        <span class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white border border-slate-300 shadow-sm"></span>
+                        <span class="text-[11px] sm:text-xs font-semibold">Світла</span>
+                    </button>
+                    <button onclick="selectTheme('dark')" class="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-black/5 transition">
+                        <span class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-zinc-900 border border-zinc-700 shadow-sm"></span>
+                        <span class="text-[11px] sm:text-xs font-semibold">Темна</span>
+                    </button>
+                    <button onclick="selectTheme('rose')" class="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-black/5 transition">
+                        <span class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-pink-400 border border-pink-500 shadow-sm"></span>
+                        <span class="text-[11px] sm:text-xs font-semibold">Рожевий</span>
+                    </button>
+                    <button onclick="selectTheme('sepia')" class="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-black/5 transition">
+                        <span class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-amber-200/80 border border-amber-300 shadow-sm"></span>
+                        <span class="text-[11px] sm:text-xs font-semibold">Сепія</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ВИЇЗНА ПАНЕЛЬ СТАТИСТИКИ -->
+        <div id="statsBackdrop" onclick="closeStatsDrawer()" class="fixed inset-0 top-[57px] z-30 hidden backdrop-blur-md bg-black/35 flex flex-col">
+            <div onclick="event.stopPropagation()" class="menu-anim w-full card-bg border-b shadow-2xl px-4 py-4">
+                <div class="max-w-3xl mx-auto">
+                    <div id="historyScrollBox" class="history-scroll overflow-x-auto pb-2 mb-4">
+                        <div id="historyDaysTrack" class="flex items-start gap-4 min-w-max pr-4"></div>
+                    </div>
+                    <div class="space-y-3 text-sm font-bold">
+                        <div class="flex items-center justify-center gap-2">
+                            <span class="muted-text">Загальне XP:</span>
+                            <span id="statDrawerXp" class="px-2.5 py-0.5 rounded-lg bg-amber-400/20 text-amber-600 font-black">0</span>
+                        </div>
+                        <div class="flex items-center justify-center gap-2">
+                            <span class="muted-text">Поточна денна серія:</span>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-300/25 text-amber-600 font-black">
+                                <i class="fa-solid fa-sun"></i>
+                                <span id="statDrawerStreak">0</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-center gap-2">
+                            <span class="muted-text">Заморожування серій:</span>
+                            <button onclick="openModal('streakFreezeModal')" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-sky-400/20 text-sky-600 font-black hover:opacity-80 transition">
+                                <i class="fa-solid fa-snowflake"></i>
+                                <span id="statDrawerFreezes">0</span>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-center gap-2 pt-1 text-xs">
+                            <span class="muted-text">Вчили до</span>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-orange-500/15 text-orange-600 font-black">
+                                <i class="fa-solid fa-fire-flame-curved"></i>
+                                <span id="statLearnedBefore">0</span>
+                            </span>
+                            <span class="muted-text">та оглядали</span>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg pill-bg font-black">
+                                <i class="fa-solid fa-rotate-right"></i>
+                                <span id="statReviewedTotal">0</span>
+                            </span>
+                        </div>
+                        <div class="flex justify-center pt-1 text-2xl">
+                            <i class="fa-solid fa-paw text-amber-500/80"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 w-full"></div>
+        </div>
+
+        <!-- ОСНОВНИЙ КОНТЕНТ -->
+        <main id="pageContent" class="flex-1 w-full max-w-5xl mx-auto px-4 pt-5 pb-24 transition duration-200">
+
+            <!-- ВКЛАДКА 1: КАРТКИ / НАВЧАННЯ -->
+            <section id="tabLearning" class="flex flex-col items-center">
+                <div class="w-full max-w-lg py-3 mb-3 flex flex-col items-center justify-center text-center">
+                    <div class="relative w-64 h-36 rounded-3xl card-bg border flex items-center justify-center shadow-xs">
+                        <div class="flex items-center gap-6 text-3xl">
+                            <i class="fa-solid fa-mountain-sun accent-text"></i>
+                            <i class="fa-solid fa-fire-flame-curved text-orange-500"></i>
+                            <i class="fa-solid fa-tree text-emerald-600"></i>
+                        </div>
+                        <!-- 1. СОНЕЧКО З КІЛЬКІСТЮ ДНІВ СЕРІЇ -->
+                        <button type="button" onclick="toggleStatsDrawer()" class="cursor-pointer absolute top-2.5 right-3 px-2.5 h-8 rounded-full bg-amber-300/90 text-amber-950 font-black text-xs flex items-center gap-1 shadow-xs hover:opacity-90 transition" title="Поточна денна серія">
+                            <i class="fa-solid fa-sun text-amber-600"></i>
+                            <span id="badgeStreakDays">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Лічильники -->
+                <div class="w-full max-w-3xl card-bg border rounded-2xl grid grid-cols-3 divide-x divide-[var(--border-line)] mb-4 shadow-xs">
+                    <div class="py-3.5 px-2 text-center">
+                        <div class="text-[11px] font-bold uppercase tracking-wide muted-text mb-1">Вчити</div>
+                        <div id="countLearn" class="text-xl font-black accent-text">0</div>
+                    </div>
+                    <div class="py-3.5 px-2 text-center">
+                        <div class="text-[11px] font-bold uppercase tracking-wide muted-text mb-1">Вивчено</div>
+                        <div id="countLearned" class="text-xl font-black accent-text">0</div>
+                    </div>
+                    <div class="py-3.5 px-2 text-center">
+                        <div class="text-[11px] font-bold uppercase tracking-wide muted-text mb-1">Навчився</div>
+                        <div id="countMastered" class="text-xl font-black accent-text">0</div>
+                    </div>
+                </div>
+
+                <!-- Кнопка ПОЧАТИ НАВЧАННЯ або КРАФТОВИЙ БЛОК "ВСІ КАРТКИ ВИВЧЕНІ" -->
+                <button id="startLearningBtn" onclick="openFlashcardsScreen()" class="w-full max-w-3xl accent-btn font-extrabold tracking-wide py-3.5 rounded-2xl shadow-md transition active:scale-[0.99] mb-4">
+                    ПОЧАТИ НАВЧАННЯ (<span id="dueCountBtn">0</span> до повторення)
+                </button>
+
+                <div id="allLearnedCraftBox" class="hidden w-full max-w-3xl card-bg border-2 border-dashed border-[var(--border-line)] rounded-2xl p-4 mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl accent-badge flex items-center justify-center text-lg shrink-0">
+                            <i class="fa-solid fa-check-double"></i>
+                        </div>
+                        <div>
+                            <div class="font-black text-sm">Всі картки вивчені!</div>
+                            <div id="nextReviewHintText" class="text-xs muted-text mt-0.5">Наразі немає карток до повторення.</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="openFlashcardsScreen(true)" class="px-4 py-2 rounded-xl pill-bg text-xs font-bold hover:opacity-85 transition shrink-0">
+                        Повторити поза чергою
+                    </button>
+                </div>
+
+                <!-- Мої картки + кнопка + -->
+                <div class="w-full max-w-3xl card-bg border rounded-2xl px-4 py-3 flex items-center justify-between mb-3">
+                    <button onclick="toggleCardsAccordion()" class="flex items-center gap-2 font-bold text-sm">
+                        <i id="cardsChevron" class="fa-solid fa-chevron-down text-xs muted-text transition-transform"></i>
+                        <span>Мої картки</span>
+                    </button>
+                    <button onclick="openAddCardScreen()" class="w-8 h-8 rounded-xl pill-bg flex items-center justify-center font-bold hover:opacity-80 transition" title="Додати картку">
+                        <i class="fa-solid fa-plus text-sm"></i>
+                    </button>
+                </div>
+
+                <div id="cardsList" class="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    <div class="md:col-span-2 card-bg border rounded-2xl text-center muted-text py-7 px-4 text-sm">
+                        Карток поки немає. Натисніть <b>+</b> праворуч, щоб додати картку.
+                    </div>
+                </div>
+            </section>
+
+            <!-- ЕКРАН КАРТОК НА ВЕСЬ ЕКРАН -->
+            <section id="flashcardsScreen" class="hidden w-full max-w-4xl mx-auto min-h-screen flex flex-col justify-between py-3 px-1 sm:px-3">
+                <div class="flex items-center justify-between mb-2">
+                    <button onclick="closeFlashcardsScreen()" class="w-10 h-10 rounded-full pill-bg flex items-center justify-center hover:opacity-80 transition" title="Назад">
+                        <i class="fa-solid fa-arrow-left text-sm"></i>
+                    </button>
+
+                    <!-- 3.4 ВІЗУАЛЬНО ПРИБРАНО ЛІЧИЛЬНИК КАРТОК І КНОПКУ ЗМІНИ МОВИ, ЗАЛИШЕНО ВОГНИК -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleStatsDrawer()" class="px-3 h-10 rounded-full card-bg border flex items-center gap-1.5 text-xs font-black text-orange-600 hover:opacity-85 transition" title="Серія">
+                            <i class="fa-solid fa-fire-flame-curved"></i>
+                            <span id="flashcardStreakVal">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Стопка з 3 чітких карток -->
+                <div class="flex-1 flex flex-col items-center justify-center w-full my-1">
+                    <div class="relative w-full max-w-2xl h-[68vh] min-h-[420px] max-h-[700px]">
+                        <div class="stack-layer-3 stack-bg-3 border rounded-3xl shadow-xs pointer-events-none"></div>
+                        <div class="stack-layer-2 stack-bg-2 border rounded-3xl shadow-sm pointer-events-none"></div>
+
+                        <div id="flashcardSwipeWrapper"
+                             onpointerdown="handleCardPointerDown(event)"
+                             onpointermove="handleCardPointerMove(event)"
+                             onpointerup="handleCardPointerUp(event)"
+                             onpointercancel="handleCardPointerCancel()"
+                             class="card-stage active-card-wrapper">
+                            <div id="flashcard3DInner" onclick="handleCardTapFlip()" class="card-3d-inner cursor-pointer">
+
+                                <!-- ЛИЦЬОВА СТОРОНА -->
+                                <div class="card-3d-face card-bg border rounded-3xl p-6 shadow-lg flex flex-col items-center justify-between text-center">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider muted-text" id="frontSideLabel">Слово</div>
+
+                                    <div class="flex flex-col items-center justify-center my-auto px-2">
+                                        <div class="flex items-center justify-center gap-2.5">
+                                            <div id="frontMainText" class="text-2xl sm:text-4xl font-black"></div>
+                                            <button type="button" onclick="event.stopPropagation(); speakSide('front')" class="w-9 h-9 rounded-full pill-bg flex items-center justify-center hover:opacity-80 transition" title="Озвучити">
+                                                <i class="fa-solid fa-volume-high text-sm accent-text"></i>
+                                            </button>
+                                        </div>
+
+                                        <div id="frontTranscriptionText" class="text-sm sm:text-base font-medium muted-text mt-1.5"></div>
+
+                                        <div id="frontExampleWrap" class="hidden mt-4 pt-3 border-t border-[var(--border-line)] max-w-md flex items-center justify-center gap-2 text-xs sm:text-sm italic muted-text">
+                                            <button type="button" onclick="event.stopPropagation(); speakExampleText()" class="w-7 h-7 rounded-full pill-bg flex items-center justify-center shrink-0 hover:opacity-80 transition" title="Озвучити приклад">
+                                                <i class="fa-solid fa-volume-low text-xs accent-text"></i>
+                                            </button>
+                                            <span id="frontExampleText"></span>
+                                        </div>
+                                    </div>
+
+                                    <div onclick="event.stopPropagation()" class="flex items-center justify-center gap-6 pt-3 border-t border-[var(--border-line)] w-full max-w-[240px] muted-text">
+                                        <button type="button" onclick="speakSide('front')" class="hover:opacity-80 transition" title="Звук">
+                                            <i class="fa-solid fa-volume-low text-sm"></i>
+                                        </button>
+                                        <button type="button" onclick="toggleFlashcardExample()" class="hover:opacity-80 transition" title="Приклад">
+                                            <i class="fa-regular fa-file-lines text-sm"></i>
+                                        </button>
+                                        <button type="button" onclick="flipFlashcard()" class="hover:opacity-80 transition" title="Перевернути">
+                                            <i class="fa-solid fa-rotate text-sm"></i>
+                                        </button>
+                                        <button type="button" onclick="toggleFlashcardNote()" class="hover:opacity-80 transition" title="Інтервал повторення">
+                                            <i class="fa-regular fa-circle-question text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- ЗВОРОТНА СТОРОНА -->
+                                <div class="card-3d-face card-3d-back card-bg border rounded-3xl p-6 shadow-lg flex flex-col items-center justify-between text-center">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider accent-text" id="backSideLabel">Переклад</div>
+
+                                    <div class="flex flex-col items-center justify-center my-auto px-2">
+                                        <div class="flex items-center justify-center gap-2.5">
+                                            <div id="backMainText" class="text-2xl sm:text-4xl font-black"></div>
+                                            <button type="button" onclick="event.stopPropagation(); speakSide('back')" class="w-9 h-9 rounded-full pill-bg flex items-center justify-center hover:opacity-80 transition" title="Озвучити">
+                                                <i class="fa-solid fa-volume-high text-sm accent-text"></i>
+                                            </button>
+                                        </div>
+
+                                        <div id="backTranscriptionText" class="text-sm sm:text-base font-medium muted-text mt-1.5"></div>
+                                        <div id="backPairSubText" class="text-xs sm:text-sm font-semibold muted-text mt-2"></div>
+
+                                        <div id="backExampleWrap" class="hidden mt-4 pt-3 border-t border-[var(--border-line)] max-w-md flex items-center justify-center gap-2 text-xs sm:text-sm italic muted-text">
+                                            <button type="button" onclick="event.stopPropagation(); speakExampleText()" class="w-7 h-7 rounded-full pill-bg flex items-center justify-center shrink-0 hover:opacity-80 transition" title="Озвучити приклад">
+                                                <i class="fa-solid fa-volume-low text-xs accent-text"></i>
+                                            </button>
+                                            <span id="backExampleText"></span>
+                                        </div>
+                                    </div>
+
+                                    <div onclick="event.stopPropagation()" class="flex items-center justify-center gap-6 pt-3 border-t border-[var(--border-line)] w-full max-w-[240px] muted-text">
+                                        <button type="button" onclick="speakSide('back')" class="hover:opacity-80 transition" title="Звук">
+                                            <i class="fa-solid fa-volume-low text-sm"></i>
+                                        </button>
+                                        <button type="button" onclick="toggleFlashcardExample()" class="hover:opacity-80 transition" title="Приклад">
+                                            <i class="fa-regular fa-file-lines text-sm"></i>
+                                        </button>
+                                        <button type="button" onclick="flipFlashcard()" class="hover:opacity-80 transition" title="Перевернути">
+                                            <i class="fa-solid fa-rotate text-sm"></i>
+                                        </button>
+                                        <button type="button" onclick="toggleFlashcardNote()" class="hover:opacity-80 transition" title="Інтервал повторення">
+                                            <i class="fa-regular fa-circle-question text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Нижній рядок -->
+                <div class="flex items-center justify-between pt-2">
+                    <button onclick="openModal('optionsModal')" class="w-11 h-11 rounded-2xl card-bg border flex items-center justify-center hover:opacity-85 transition" title="Можливості">
+                        <i class="fa-solid fa-gear text-base"></i>
+                    </button>
+
+                    <button onclick="openAddCardScreen()" class="w-11 h-11 rounded-2xl accent-btn flex items-center justify-center shadow-sm hover:opacity-90 transition" title="Додати картку">
+                        <i class="fa-solid fa-plus text-base"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ЕКРАН ДОДАВАННЯ КАРТКИ -->
+            <section id="addCardScreen" class="hidden w-full max-w-3xl mx-auto">
+                <div class="flex items-center justify-between gap-2 mb-5">
+                    <div class="flex items-center gap-2">
+                        <button onclick="closeAddCardScreen()" class="w-10 h-10 rounded-full pill-bg flex items-center justify-center hover:opacity-80 transition" title="Назад">
+                            <i class="fa-solid fa-arrow-left text-sm"></i>
+                        </button>
+
+                        <button onclick="openSortCardModal()" class="px-2.5 h-10 rounded-xl card-bg border flex items-center gap-1.5 hover:opacity-85 transition" title="Відсортуйте картку / вибір набору">
+                            <span class="w-5 h-5 rounded-full bg-sky-500/20 text-sky-600 flex items-center justify-center text-[10px]">
+                                <i class="fa-solid fa-globe"></i>
+                            </span>
+                            <span class="w-5 h-5 rounded-full bg-orange-500/20 text-orange-600 flex items-center justify-center text-[10px]">
+                                <i class="fa-solid fa-gamepad"></i>
+                            </span>
+                            <span id="selectedSetBadge" class="text-[11px] font-bold ml-1 hidden sm:inline"></span>
+                        </button>
+                    </div>
+
+                    <div class="relative">
+                        <button onclick="toggleLangMenu(event)" class="flex items-center gap-2 card-bg border px-3.5 py-1.5 rounded-xl text-sm font-semibold hover:opacity-85 transition" title="Змінити мову картки">
+                            <span id="addScreenLangFlag" class="text-base">🇩🇪</span>
+                            <span id="addScreenLangLabel">німецька</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] muted-text"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-3 mb-3">
+                    <!-- ПОЛЕ 1: УКРАЇНСЬКА -->
+                    <div class="card-bg border rounded-2xl px-4 py-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-bold muted-text">українська</label>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="autoTranslateCard()" id="autoTranslateBtn" class="text-xs font-bold accent-text hover:underline">
+                                    Перекласти
+                                </button>
+                                <button type="button" onclick="document.getElementById('cardTranslationInput').value=''" class="text-xs muted-text hover:opacity-80" title="Очистити">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <input id="cardTranslationInput" type="text" class="w-full bg-transparent text-sm font-medium focus:outline-none" placeholder="Введіть слово або фразу українською...">
+                    </div>
+
+                    <!-- ПОЛЕ 2: ІНОЗЕМНА МОВА -->
+                    <div class="card-bg border rounded-2xl px-4 py-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <label id="labelTargetLang" class="text-xs font-bold muted-text">німецька</label>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="speakText(document.getElementById('cardWordInput').value)" class="text-xs muted-text hover:opacity-80" title="Озвучити">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                </button>
+                                <button type="button" onclick="document.getElementById('cardWordInput').value=''" class="text-xs muted-text hover:opacity-80" title="Очистити">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <input id="cardWordInput" type="text" class="w-full bg-transparent text-sm font-medium focus:outline-none" placeholder="Переклад іноземною мовою...">
+                    </div>
+
+                    <!-- ПОЛЕ 3: ПРИКЛАД -->
+                    <div class="card-bg border rounded-2xl px-4 py-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <label id="labelExampleLang" class="text-xs font-bold muted-text">Приклад використання (німецька)</label>
+                            <button type="button" onclick="document.getElementById('cardExampleInput').value=''" class="text-xs muted-text hover:opacity-80" title="Очистити">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <input id="cardExampleInput" type="text" class="w-full bg-transparent text-sm font-medium focus:outline-none" placeholder="Речення з прикладом...">
+                    </div>
+                </div>
+
+                <!-- ПРИМІТКА БЕЗ ДУЖОК -->
+                <div class="w-full card-bg border rounded-2xl px-4 py-2.5 mb-4 flex items-center gap-2.5 text-xs muted-text">
+                    <i class="fa-solid fa-circle-info accent-text shrink-0"></i>
+                    <span>
+                        <strong class="font-bold">Примітка:</strong> орієнтир активних карток — до <strong>20 нових слів</strong> одночасно.
+                    </span>
+                </div>
+
+                <div class="flex justify-center mb-4">
+                    <button type="button" onclick="toggleExamplesAndGrammar()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl pill-bg text-xs font-bold hover:opacity-85 transition">
+                        <i class="fa-solid fa-wand-magic-sparkles accent-text"></i>
+                        <span>Приклади та граматика</span>
+                    </button>
+                </div>
+
+                <div id="examplesGrammarBox" class="hidden card-bg border rounded-2xl p-4 mb-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase accent-text">Приклади та граматика</span>
+                        <button type="button" onclick="document.getElementById('examplesGrammarBox').classList.add('hidden')" class="text-xs muted-text">Закрити</button>
+                    </div>
+                    <p id="grammarHintText" class="text-xs leading-relaxed muted-text"></p>
+                    <div id="exampleSuggestionsList" class="space-y-1.5"></div>
+                </div>
+
+                <button type="button" onclick="saveNewCard()" class="w-full accent-btn font-extrabold tracking-wide py-3.5 rounded-2xl shadow-md transition active:scale-[0.99]">
+                    ЗБЕРЕГТИ
+                </button>
+            </section>
+
+            <!-- ВКЛАДКА 2: BOG -->
+            <section id="tabPractice" class="hidden max-w-3xl mx-auto">
+                <h2 class="text-xl font-black mb-3">BOG</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <button onclick="startQuickQuiz(false)" class="card-bg border p-4 rounded-2xl text-left hover:opacity-90 transition">
+                        <i class="fa-solid fa-comments accent-text text-xl mb-2 block"></i>
+                        <div class="font-bold text-sm">Тест перекладу</div>
+                        <div class="text-xs muted-text">Перевірка слів (+15 XP)</div>
+                    </button>
+                    <button onclick="startQuickQuiz(true)" class="card-bg border p-4 rounded-2xl text-left hover:opacity-90 transition">
+                        <i class="fa-solid fa-repeat accent-text text-xl mb-2 block"></i>
+                        <div class="font-bold text-sm">Зворотний тест</div>
+                        <div class="text-xs muted-text">З української на мову колоди</div>
+                    </button>
+                    <button onclick="speakRandomCard()" class="card-bg border p-4 rounded-2xl text-left hover:opacity-90 transition">
+                        <i class="fa-solid fa-volume-high accent-text text-xl mb-2 block"></i>
+                        <div class="font-bold text-sm">Слухати</div>
+                        <div class="text-xs muted-text">Озвучка слова</div>
+                    </button>
+                    <button onclick="openFlashcardsScreen()" class="card-bg border p-4 rounded-2xl text-left hover:opacity-90 transition">
+                        <i class="fa-solid fa-layer-group accent-text text-xl mb-2 block"></i>
+                        <div class="font-bold text-sm">Картки</div>
+                        <div class="text-xs muted-text">Свайпи та 3D-переворот</div>
+                    </button>
+                </div>
+
+                <div id="quizBox" class="hidden card-bg border rounded-2xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold uppercase accent-text">Перевірка</span>
+                        <button onclick="document.getElementById('quizBox').classList.add('hidden')" class="text-xs muted-text">Закрити</button>
+                    </div>
+                    <div id="quizWord" class="text-lg font-black mb-2"></div>
+                    <div class="flex gap-2">
+                        <input id="quizInput" type="text" class="flex-1 px-3 py-2 rounded-xl border card-bg text-sm focus:outline-none" placeholder="Введіть відповідь...">
+                        <button onclick="checkQuizAnswer()" class="accent-btn text-sm font-bold px-4 py-2 rounded-xl transition">Перевірити</button>
+                    </div>
+                    <p id="quizFeedback" class="text-xs font-bold mt-2"></p>
+                </div>
+            </section>
+
+            <!-- ВКЛАДКА 3: АККАУНТ ТА ПОШУК ДРУЗІВ -->
+            <section id="tabAccount" class="hidden max-w-3xl mx-auto">
+                <div class="card-bg border rounded-2xl p-4 flex items-center justify-between gap-3 mb-5">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div id="userAvatar" class="w-12 h-12 rounded-2xl accent-btn font-black flex items-center justify-center text-lg shrink-0">U</div>
+                        <div class="min-w-0">
+                            <div id="userNickDisplay" class="font-bold text-sm truncate">Користувач</div>
+                            <div id="userEmailDisplay" class="text-xs muted-text truncate"></div>
+                            <div class="text-xs font-bold mt-1">
+                                <span class="accent-text">XP: <span id="userXp">0</span></span> ·
+                                <span class="muted-text">Серія: <span id="userStreak">0</span> дн.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-sm">Друзі та вогники</h3>
+                    <button onclick="openAddFriendModal()" class="accent-badge text-xs font-bold px-3 py-1.5 rounded-xl transition">
+                        + Знайти друга
+                    </button>
+                </div>
+
+                <div id="friendsList" class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-6">
+                    <div class="md:col-span-2 card-bg border rounded-2xl text-center muted-text py-5 text-xs">
+                        Друзів поки немає.
+                    </div>
+                </div>
+
+                <!-- Кнопки Вийти та Видалити акаунт -->
+                <div class="max-w-md mx-auto space-y-3 pt-2">
+                    <button type="button" onclick="logout()"
+                        class="w-full card-bg border rounded-2xl px-4 py-3.5 flex items-center gap-3 text-left text-sm font-semibold hover:opacity-85 transition">
+                        <i class="fa-solid fa-right-from-bracket muted-text w-4"></i>
+                        <span>Вийти</span>
+                    </button>
+
+                    <button type="button" onclick="deleteUserAccount()"
+                        class="w-full card-bg border rounded-2xl px-4 py-3.5 flex items-center gap-3 text-left text-sm font-semibold muted-text hover:text-rose-600 transition">
+                        <i class="fa-regular fa-trash-can w-4"></i>
+                        <span>Видалити акаунт</span>
+                    </button>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- НИЖНЯ НАВІГАЦІЯ -->
+        <nav id="bottomNav" class="sticky bottom-0 z-20 border-t card-bg py-2.5 px-4">
+            <div class="max-w-3xl w-full mx-auto flex justify-around items-center">
+                <button onclick="switchTab('learning')" id="navLearning" class="flex flex-col items-center accent-text transition">
+                    <i class="fa-solid fa-clone text-lg mb-0.5"></i>
+                    <span class="text-[11px] font-bold">Картки</span>
+                </button>
+                <button onclick="switchTab('practice')" id="navPractice" class="flex flex-col items-center muted-text hover:opacity-80 transition">
+                    <i class="fa-regular fa-comment-dots text-lg mb-0.5"></i>
+                    <span class="text-[11px] font-bold tracking-wider">BOG</span>
+                </button>
+                <button onclick="switchTab('account')" id="navAccount" class="flex flex-col items-center muted-text hover:opacity-80 transition">
+                    <i class="fa-regular fa-user text-lg mb-0.5"></i>
+                    <span class="text-[11px] font-medium">Аккаунт</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- ВІКНО ПІДТВЕРДЖЕННЯ ВИДАЛЕННЯ КАРТКИ -->
+    <div id="deleteCardConfirmModal" onclick="closeModal('deleteCardConfirmModal')" class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="bg-white text-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
+            <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl mx-auto mb-3">
+                <i class="fa-regular fa-trash-can"></i>
+            </div>
+            <h3 class="text-lg font-black mb-1.5">Видалити картку?</h3>
+            <p class="text-xs text-slate-500 mb-5">
+                Ви впевнені, що хочете видалити картку <strong id="deleteCardTargetWord" class="text-slate-800"></strong>? Цю дію неможливо скасувати.
+            </p>
+            <div class="grid grid-cols-2 gap-2.5">
+                <button type="button" onclick="closeModal('deleteCardConfirmModal')" class="py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                    Скасувати
+                </button>
+                <button type="button" onclick="confirmDeleteCard()" class="py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition">
+                    Так, видалити
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ВІКНО «МОЖЛИВОСТІ» -->
+    <div id="optionsModal" onclick="closeModal('optionsModal')" class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="bg-white text-slate-900 rounded-3xl p-5 w-full max-w-sm shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-black">Можливості</h3>
+                <button onclick="closeModal('optionsModal')" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-sm font-medium">
+                <label class="flex items-center justify-between py-1.5 cursor-pointer">
+                    <span class="flex items-center gap-3"><i class="fa-solid fa-volume-high text-slate-600 w-4"></i> Звук</span>
+                    <input id="optSound" type="checkbox" checked class="w-4 h-4 accent-orange-600">
+                </label>
+                <label class="flex items-center justify-between py-1.5 cursor-pointer">
+                    <span class="flex items-center gap-3"><i class="fa-solid fa-record-vinyl text-slate-600 w-4"></i> Голоси</span>
+                    <input id="optVoices" type="checkbox" checked class="w-4 h-4 accent-orange-600">
+                </label>
+                <label class="flex items-center justify-between py-1.5 cursor-pointer">
+                    <span class="flex items-center gap-3"><i class="fa-solid fa-language text-slate-600 w-4"></i> Вимова (транскрипція)</span>
+                    <input id="optPronunciation" type="checkbox" checked onchange="renderFlashcardView()" class="w-4 h-4 accent-orange-600">
+                </label>
+                <label class="flex items-center justify-between py-1.5 cursor-pointer">
+                    <span class="flex items-center gap-3"><i class="fa-regular fa-image text-slate-600 w-4"></i> Зображення</span>
+                    <input id="optImages" type="checkbox" class="w-4 h-4 accent-orange-600">
+                </label>
+                <div class="pt-1">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Голос озвучки</label>
+                    <select id="voiceSelect" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 focus:outline-none"></select>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('optionsModal')" class="w-full mt-5 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-2xl transition text-sm">
+                Готово
+            </button>
+        </div>
+    </div>
+
+    <!-- ВІКНО «ВІДСОРТУЙТЕ КАРТКУ» -->
+    <div id="sortCardModal" onclick="closeModal('sortCardModal')" class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="bg-white text-slate-900 rounded-3xl p-5 w-full max-w-sm shadow-2xl relative">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-black">Відсортуйте картку</h3>
+                <button onclick="closeModal('sortCardModal')" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="cardSetsList" class="space-y-2 mb-3"></div>
+
+            <div id="createSetBox" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-3 space-y-2">
+                <input id="newSetNameInput" type="text" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none" placeholder="Назва нового набору (наприклад, подорожі)">
+                <div class="flex gap-2">
+                    <button type="button" onclick="createCardSet()" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition">
+                        Додати набір
+                    </button>
+                    <button type="button" onclick="toggleCreateSetBox(false)" class="px-3 py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-xs">
+                        Скасувати
+                    </button>
+                </div>
+            </div>
+
+            <button type="button" onclick="toggleCreateSetBox(true)" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-orange-600 hover:bg-orange-50 transition mb-3">
+                <i class="fa-solid fa-plus"></i>
+                <span>Створити набір карток</span>
+            </button>
+
+            <label class="flex items-center gap-2 text-xs font-medium text-slate-600 mb-4 cursor-pointer">
+                <input type="checkbox" id="saveToMainDeckCheck" checked class="rounded accent-orange-600">
+                <span>Зберегти у мою колоду карт</span>
+            </label>
+
+            <button type="button" onclick="closeModal('sortCardModal')" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-2xl transition">
+                ВИКОНАНО
+            </button>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНЕ ВІКНО ЗАМОРОЖУВАННЯ СЕРІЙ -->
+    <div id="streakFreezeModal" onclick="closeModal('streakFreezeModal')" class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="bg-white text-slate-900 rounded-3xl p-6 w-full max-w-md shadow-2xl relative text-center">
+            <button onclick="closeModal('streakFreezeModal')" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center absolute top-4 right-4 hover:bg-slate-200 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-xl font-black mb-3">Заморожування серій</h3>
+            <div class="inline-flex flex-col items-center justify-center bg-sky-50 border border-sky-200 rounded-2xl px-5 py-3 mb-4">
+                <i class="fa-solid fa-snowflake text-sky-500 text-2xl mb-1"></i>
+                <span id="modalFreezeCount" class="font-black text-sky-700 text-lg">0</span>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed mb-5">
+                Не хвилюйтеся, що пропустите день і втратите щоденну серію.
+                Заморозка збереже вашу серію. Заморозка буде застосована автоматично, якщо ви пропустите день.
+            </p>
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 text-xl mb-4">
+                <i class="fa-solid fa-fire-flame-curved"></i>
+            </div>
+            <div class="text-sm font-black text-slate-800 mb-3">Максимальне заморожування</div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                    <div class="text-xs font-bold text-slate-500 mb-1">Безкоштовно</div>
+                    <div class="text-lg font-black text-slate-800">1</div>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                    <div class="text-xs font-bold text-slate-500 mb-1">Підписники</div>
+                    <div class="text-lg font-black text-slate-800">2</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНЕ ВІКНО НОВОЇ КОЛОДИ -->
+    <div id="newDeckModal" class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white text-slate-900 rounded-3xl p-5 w-full max-w-sm shadow-2xl">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-black">Нова колода</h3>
+                <button onclick="closeModal('newDeckModal')" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Назва мови / колоди</label>
+                    <input id="newDeckName" type="text" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none" placeholder="Наприклад, іспанська">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Код мови</label>
+                    <input id="newDeckCode" type="text" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none" value="es">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Прапор</label>
+                    <input id="newDeckFlag" type="text" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none" value="🇪🇸">
+                </div>
+                <button onclick="createNewDeck()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-2xl transition">
+                    Створити колоду
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНЕ ВІКНО ПОШУКУ ТА ДОДАВАННЯ ДРУГА -->
+    <div id="addFriendModal" onclick="closeModal('addFriendModal')" class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="bg-white text-slate-900 rounded-3xl p-5 w-full max-w-md shadow-2xl">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-black">Знайти друга</h3>
+                <button onclick="closeModal('addFriendModal')" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="flex gap-2 mb-3">
+                <input id="friendInput" type="text" oninput="searchRegisteredUsers()" class="flex-1 px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none" placeholder="Введіть нікнейм користувача...">
+                <button onclick="saveFriend()" class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shrink-0">
+                    Додати
+                </button>
+            </div>
+            <div id="friendSearchResults" class="space-y-1.5 max-h-56 overflow-y-auto text-xs"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            onAuthStateChanged,
+            signOut,
+            deleteUser
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            getDocs,
+            doc,
+            setDoc,
+            getDoc,
+            updateDoc,
+            deleteDoc
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZWnpfEcWV4GLXGYf_7hiyo0q2eG038PI",
+            authDomain: "bloodoflanguage.firebaseapp.com",
+            projectId: "bloodoflanguage",
+            storageBucket: "bloodoflanguage.firebasestorage.app",
+            messagingSenderId: "236698093552",
+            appId: "1:236698093552:web:f4a780c4678e9166127f35",
+            measurementId: "G-WL5BS6DBTG"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const DEFAULT_DECKS = [
+            { id: "de", code: "de", label: "німецька", flag: "🇩🇪", speech: "de-DE" },
+            { id: "en", code: "en", label: "англійська", flag: "🇬🇧", speech: "en-US" }
+        ];
+
+        const DEFAULT_SETS = ["internet", "game"];
+
+        const DUOCARDS_INTERVALS = [
+            { ms: 90 * 1000, label: "90 сек" },
+            { ms: 30 * 60 * 1000, label: "30 хв" },
+            { ms: 12 * 60 * 60 * 1000, label: "12 год" },
+            { ms: 2 * 24 * 60 * 60 * 1000, label: "2 дні" },
+            { ms: 14 * 24 * 60 * 60 * 1000, label: "2 тижні" },
+            { ms: 60 * 24 * 60 * 60 * 1000, label: "2 місяці" }
+        ];
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        let availableVoices = [];
+        let registeredUsersCache = [];
+        const transcriptionCache = new Map();
+        let pendingDeleteCardId = null;
+        let onboardingSelectedDeck = "de";
+        let onboardingSelectedTheme = "sepia";
+
+        function loadVoicesList() {
+            if (!("speechSynthesis" in window)) return;
+            availableVoices = window.speechSynthesis.getVoices() || [];
+            const select = document.getElementById('voiceSelect');
+            if (!select) return;
+            const prev = select.value;
+            select.innerHTML = `<option value="">Автоматичний голос</option>` + availableVoices.map((v, idx) =>
+                `<option value="${idx}">${escapeHtml(v.name)} (${escapeHtml(v.lang)})</option>`
+            ).join("");
+            if (prev) select.value = prev;
+        }
+
+        if ("speechSynthesis" in window) {
+            loadVoicesList();
+            window.speechSynthesis.onvoiceschanged = loadVoicesList;
+        }
+
+        function clamp(val, min, max) {
+            return Math.min(max, Math.max(min, val));
+        }
+
+        function getCardStageIndex(card) {
+            if (typeof card.srsStep === "number") {
+                return clamp(card.srsStep, 0, DUOCARDS_INTERVALS.length - 1);
+            }
+            if (card.status === "mastered") return 4;
+            if (card.status === "learned") return 2;
+            return 0;
+        }
+
+        function computeDuoCardsStep(card, remembered, now = Date.now()) {
+            const currentStep = getCardStageIndex(card);
+            let nextStep = remembered ? Math.min(currentStep + 1, DUOCARDS_INTERVALS.length - 1) : 0;
+            const chosen = remembered ? DUOCARDS_INTERVALS[currentStep] : DUOCARDS_INTERVALS[0];
+
+            const nextReviewAt = now + chosen.ms;
+            const nextReps = remembered ? (card.reps || 0) + 1 : (card.reps || 0);
+            const nextLapses = remembered ? (card.lapses || 0) : (card.lapses || 0) + 1;
+
+            let status = "learn";
+            if (remembered) {
+                if (currentStep >= 4) status = "mastered";
+                else if (currentStep >= 2) status = "learned";
+            }
+
+            return {
+                srsStep: nextStep,
+                reps: nextReps,
+                lapses: nextLapses,
+                lastReviewAt: now,
+                nextReviewAt,
+                intervalLabel: chosen.label,
+                status
+            };
+        }
+
+        function getTodayKey(offsetDays = 0) {
+            const dt = new Date(Date.now() + offsetDays * DAY_MS);
+            const y = dt.getFullYear();
+            const m = String(dt.getMonth() + 1).padStart(2, "0");
+            const d = String(dt.getDate()).padStart(2, "0");
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatShortDate(offsetDays) {
+            if (offsetDays === 0) return "Сьогодні";
+            const dt = new Date(Date.now() + offsetDays * DAY_MS);
+            const d = String(dt.getDate()).padStart(2, "0");
+            const m = String(dt.getMonth() + 1).padStart(2, "0");
+            return `${d}.${m}`;
+        }
+
+        function formatTimeLeft(ms) {
+            if (ms <= 0) return "зараз";
+            const totalSec = Math.ceil(ms / 1000);
+            if (totalSec < 60) return `через ${totalSec} сек`;
+            const totalMin = Math.ceil(totalSec / 60);
+            if (totalMin < 60) return `через ${totalMin} хв`;
+            const totalHours = Math.ceil(totalMin / 60);
+            if (totalHours < 24) return `через ${totalHours} год`;
+            const totalDays = Math.ceil(totalHours / 24);
+            return `через ${totalDays} дн.`;
+        }
+
+        let isLoginMode = true;
+        let currentUser = null;
+        let selectedCardSet = "";
+        let userProfile = {
+            nickname: "",
+            xp: 0,
+            streak: 0,
+            freezes: 0,
+            friends: [],
+            theme: "sepia",
+            activeDeckId: "de",
+            customDecks: [],
+            customSets: [],
+            activityByDay: {},
+            onboardingCompleted: false
+        };
+        let allCards = [];
+        let cardsCollapsed = false;
+
+        let flashcardQueue = [];
+        let flashcardIndex = 0;
+        let showTranslationFirst = false;
+        let isFlashcardFlipped = false;
+        let showFlashcardExample = false;
+        let showFlashcardNote = false;
+        let isAnimatingSwipe = false;
+        let pointerStartX = null;
+        let pointerDragged = false;
+
+        let currentQuizCard = null;
+        let quizReverse = false;
+
+        function getDecks() {
+            return [...DEFAULT_DECKS, ...(userProfile.customDecks || [])];
+        }
+
+        function getActiveDeck() {
+            const decks = getDecks();
+            return decks.find(d => d.id === userProfile.activeDeckId) || decks[0];
+        }
+
+        function getDeckCards() {
+            const active = getActiveDeck();
+            return allCards.filter(c => (c.deckId || "de") === active.id);
+        }
+
+        function getAllSets() {
+            return [...DEFAULT_SETS, ...(userProfile.customSets || [])];
+        }
+
+        // --- ПОЧАТКОВИЙ ЕКРАН ДЛЯ НОВОГО КОРИСТУВАЧА ---
+        function openOnboardingScreen() {
+            onboardingSelectedDeck = userProfile.activeDeckId || "de";
+            onboardingSelectedTheme = userProfile.theme || "sepia";
+            updateOnboardingUI();
+            const screen = document.getElementById('onboardingScreen');
+            screen.classList.remove("hidden");
+            screen.classList.add("flex");
+        }
+
+        function updateOnboardingUI() {
+            ['de', 'en'].forEach(code => {
+                const btn = document.getElementById(`onbDeck_${code}`);
+                if (!btn) return;
+                if (onboardingSelectedDeck === code) {
+                    btn.className = "flex items-center gap-3 p-3.5 rounded-2xl border-2 border-[var(--accent)] accent-badge text-left transition";
+                } else {
+                    btn.className = "flex items-center gap-3 p-3.5 rounded-2xl border card-bg text-left hover:opacity-85 transition";
+                }
+            });
+
+            ['light', 'dark', 'rose', 'sepia'].forEach(th => {
+                const btn = document.getElementById(`onbTheme_${th}`);
+                if (!btn) return;
+                if (onboardingSelectedTheme === th) {
+                    btn.className = "flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border-2 border-[var(--accent)] accent-badge transition";
+                } else {
+                    btn.className = "flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border card-bg transition";
+                }
+            });
+        }
+
+        window.selectOnboardingDeck = function (code) {
+            onboardingSelectedDeck = code;
+            updateOnboardingUI();
+        };
+
+        window.selectOnboardingTheme = function (themeName) {
+            onboardingSelectedTheme = themeName;
+            applyThemeClass(themeName);
+            updateOnboardingUI();
+        };
+
+        window.finishOnboarding = async function (goToAddCard) {
+            userProfile.activeDeckId = onboardingSelectedDeck;
+            userProfile.theme = onboardingSelectedTheme;
+            userProfile.onboardingCompleted = true;
+
+            applyThemeClass(onboardingSelectedTheme);
+            renderLanguage();
+            renderCards();
+
+            const screen = document.getElementById('onboardingScreen');
+            screen.classList.add("hidden");
+            screen.classList.remove("flex");
+
+            if (currentUser) {
+                await setDoc(doc(db, "users", currentUser.uid), {
+                    activeDeckId: onboardingSelectedDeck,
+                    theme: onboardingSelectedTheme,
+                    onboardingCompleted: true
+                }, { merge: true });
+            }
+
+            if (goToAddCard) {
+                openAddCardScreen();
+            }
+        };
+
+        window.toggleAuthMode = function () {
+            isLoginMode = !isLoginMode;
+            document.getElementById('authTitle').innerText = isLoginMode ? "Вхід у Blood of Language" : "Реєстрація";
+            document.getElementById('nicknameFieldWrap').classList.toggle("hidden", isLoginMode);
+            document.getElementById('authSubmitBtn').innerText = isLoginMode ? "Увійти" : "Зареєструватися";
+            document.getElementById('authSwitchText').innerText = isLoginMode
+                ? "Ще немає акаунта? Зареєструватися"
+                : "Вже є акаунт? Увійти";
+        };
+
+        async function syncPublicProfile(uid, profile) {
+            try {
+                await setDoc(doc(db, "publicProfiles", uid), {
+                    uid,
+                    nickname: profile.nickname || "Користувач",
+                    xp: profile.xp || 0,
+                    streak: profile.streak || 0,
+                    updatedAt: Date.now()
+                }, { merge: true });
+            } catch {
+                // ігноруємо помилку доступу
+            }
+        }
+
+        window.handleAuth = async function () {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value;
+            const nickname = document.getElementById('authNickname').value.trim();
+            if (!email || !password) return alert("Введіть email та пароль.");
+
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    const cred = await createUserWithEmailAndPassword(auth, email, password);
+                    const initialProfile = {
+                        email: cred.user.email,
+                        nickname: nickname || email.split("@")[0],
+                        xp: 0,
+                        streak: 0,
+                        freezes: 0,
+                        friends: [],
+                        theme: "sepia",
+                        activeDeckId: "de",
+                        customDecks: [],
+                        customSets: [],
+                        activityByDay: {},
+                        onboardingCompleted: false
+                    };
+                    await setDoc(doc(db, "users", cred.user.uid), initialProfile);
+                    await syncPublicProfile(cred.user.uid, initialProfile);
+                }
+            } catch (err) {
+                alert("Помилка: " + err.message);
+            }
+        };
+
+        window.logout = async function () {
+            await signOut(auth);
+        };
+
+        window.deleteUserAccount = async function () {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const ok = confirm(
+                "Видалити акаунт назавжди? Усі картки, прогрес, серія та список друзів будуть стерті."
+            );
+            if (!ok) return;
+
+            try {
+                const cardsSnap = await getDocs(collection(db, "users", user.uid, "cards"));
+                for (const item of cardsSnap.docs) {
+                    await deleteDoc(doc(db, "users", user.uid, "cards", item.id));
+                }
+
+                await deleteDoc(doc(db, "users", user.uid)).catch(() => {});
+                await deleteDoc(doc(db, "publicProfiles", user.uid)).catch(() => {});
+
+                await deleteUser(user);
+                alert("Акаунт успішно видалено.");
+            } catch (err) {
+                if (err.code === "auth/requires-recent-login") {
+                    alert("З міркувань безпеки вийдіть, увійдіть в акаунт ще раз і повторіть видалення.");
+                } else {
+                    alert("Не вдалося видалити акаунт: " + err.message);
+                }
+            }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            const authScreen = document.getElementById('authScreen');
+            if (user) {
+                currentUser = user;
+                authScreen.classList.add('hidden');
+                await loadAllUserData(user.uid);
+            } else {
+                currentUser = null;
+                allCards = [];
+                renderLanguage();
+                renderCards();
+                renderStatsDrawer();
+                document.getElementById('onboardingScreen').classList.add('hidden');
+                authScreen.classList.remove('hidden');
+            }
+        });
+
+        async function loadAllUserData(uid) {
+            const userRef = doc(db, "users", uid);
+            const snap = await getDoc(userRef);
+
+            if (snap.exists()) {
+                const d = snap.data();
+                userProfile = {
+                    nickname: d.nickname || currentUser.email.split("@")[0],
+                    xp: d.xp || 0,
+                    streak: d.streak || 0,
+                    freezes: d.freezes || 0,
+                    friends: Array.isArray(d.friends) ? d.friends : [],
+                    theme: d.theme || "sepia",
+                    activeDeckId: d.activeDeckId || "de",
+                    customDecks: Array.isArray(d.customDecks) ? d.customDecks : [],
+                    customSets: Array.isArray(d.customSets) ? d.customSets : [],
+                    activityByDay: d.activityByDay && typeof d.activityByDay === "object" ? d.activityByDay : {},
+                    onboardingCompleted: d.onboardingCompleted === true
+                };
+            } else {
+                userProfile = {
+                    nickname: currentUser.email.split("@")[0],
+                    xp: 0,
+                    streak: 0,
+                    freezes: 0,
+                    friends: [],
+                    theme: "sepia",
+                    activeDeckId: "de",
+                    customDecks: [],
+                    customSets: [],
+                    activityByDay: {},
+                    onboardingCompleted: false
+                };
+                await setDoc(userRef, { email: currentUser.email, ...userProfile });
+            }
+
+            await syncPublicProfile(uid, userProfile);
+            applyThemeClass(userProfile.theme);
+            renderLanguage();
+            renderProfile();
+            renderFriends();
+
+            const cardsSnap = await getDocs(collection(db, "users", uid, "cards"));
+            allCards = cardsSnap.docs.map(item => ({ id: item.id, ...item.data() }));
+            allCards.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            renderCards();
+            renderStatsDrawer();
+
+            // Показуємо вітальний початковий екран, якщо новий користувач ще не проходив онбординг і не має карток
+            if (!userProfile.onboardingCompleted && allCards.length === 0) {
+                openOnboardingScreen();
+            }
+        }
+
+        async function recordActivity(type, xpGain = 0) {
+            const todayKey = getTodayKey(0);
+            const cur = userProfile.activityByDay[todayKey] || { added: 0, reviewed: 0 };
+            if (type === "added") cur.added += 1;
+            if (type === "reviewed") cur.reviewed += 1;
+            userProfile.activityByDay[todayKey] = cur;
+
+            if (xpGain > 0) {
+                userProfile.xp += xpGain;
+                if (userProfile.streak === 0) userProfile.streak = 1;
+            }
+
+            renderProfile();
+            renderStatsDrawer();
+
+            if (currentUser) {
+                await setDoc(doc(db, "users", currentUser.uid), {
+                    xp: userProfile.xp,
+                    streak: userProfile.streak,
+                    activityByDay: userProfile.activityByDay
+                }, { merge: true });
+                await syncPublicProfile(currentUser.uid, userProfile);
+            }
+        }
+
+        function renderProfile() {
+            document.getElementById('userNickDisplay').innerText = userProfile.nickname;
+            document.getElementById('userEmailDisplay').innerText = currentUser?.email || "";
+            document.getElementById('userAvatar').innerText = (userProfile.nickname[0] || "U").toUpperCase();
+            document.getElementById('userXp').innerText = userProfile.xp;
+            document.getElementById('badgeStreakDays').innerText = userProfile.streak || 0;
+            document.getElementById('userStreak').innerText = userProfile.streak;
+            const fcStreak = document.getElementById('flashcardStreakVal');
+            if (fcStreak) fcStreak.innerText = userProfile.streak;
+        }
+
+        function setContentBlur(blurred) {
+            const content = document.getElementById('pageContent');
+            if (!content) return;
+            content.classList.toggle("blur-sm", blurred);
+            content.classList.toggle("pointer-events-none", blurred);
+        }
+
+        window.toggleStatsDrawer = function () {
+            closeLangMenu();
+            closeThemeDrawer();
+            const backdrop = document.getElementById('statsBackdrop');
+            const isOpening = backdrop.classList.contains("hidden");
+            if (isOpening) {
+                renderStatsDrawer();
+                backdrop.classList.remove("hidden");
+                setContentBlur(true);
+                requestAnimationFrame(() => {
+                    const box = document.getElementById('historyScrollBox');
+                    if (box) box.scrollLeft = box.scrollWidth;
+                });
+            } else {
+                closeStatsDrawer();
+            }
+        };
+
+        window.closeStatsDrawer = function () {
+            document.getElementById('statsBackdrop').classList.add("hidden");
+            setContentBlur(false);
+        };
+
+        function renderStatsDrawer() {
+            document.getElementById('statDrawerXp').innerText = userProfile.xp || 0;
+            document.getElementById('statDrawerStreak').innerText = userProfile.streak || 0;
+            document.getElementById('statDrawerFreezes').innerText = userProfile.freezes || 0;
+            document.getElementById('modalFreezeCount').innerText = userProfile.freezes || 0;
+
+            const cards = getDeckCards();
+            const learnedOrMastered = cards.filter(c => c.status === "learned" || c.status === "mastered").length;
+            const totalReviewed = Object.values(userProfile.activityByDay || {}).reduce((acc, item) => acc + (item.reviewed || 0), 0);
+
+            document.getElementById('statLearnedBefore').innerText = learnedOrMastered;
+            document.getElementById('statReviewedTotal').innerText = totalReviewed;
+
+            const track = document.getElementById('historyDaysTrack');
+            const cols = [];
+            for (let offset = -29; offset <= 0; offset++) {
+                const key = getTodayKey(offset);
+                const dayStats = (userProfile.activityByDay && userProfile.activityByDay[key]) || { added: 0, reviewed: 0 };
+                const isToday = offset === 0;
+                const hasActivity = (dayStats.added > 0 || dayStats.reviewed > 0);
+                const flameColor = hasActivity ? "text-orange-500" : "muted-text opacity-45";
+                const dateLabel = formatShortDate(offset);
+
+                cols.push(`
+                    <div class="flex flex-col items-center min-w-[48px] text-center">
+                        <div class="text-[11px] font-bold ${isToday ? 'accent-text' : 'muted-text'} mb-1">${dateLabel}</div>
+                        <div class="w-8 h-8 rounded-full pill-bg flex items-center justify-center mb-1.5 ${flameColor}">
+                            <i class="fa-solid fa-fire-flame-curved text-sm"></i>
+                        </div>
+                        <div class="text-[10px] muted-text leading-none mb-0.5">Додано</div>
+                        <div class="text-xs font-black mb-1.5">${dayStats.added || 0}</div>
+                        <div class="text-[10px] muted-text leading-none mb-0.5">Перевірено</div>
+                        <div class="text-xs font-black">${dayStats.reviewed || 0}</div>
+                    </div>
+                `);
+            }
+            track.innerHTML = cols.join("");
+        }
+
+        window.toggleLangMenu = function (event) {
+            event.stopPropagation();
+            closeThemeDrawer();
+            closeStatsDrawer();
+            renderDecksMenu();
+            document.getElementById('langDropdown').classList.toggle("hidden");
+        };
+
+        window.closeLangMenu = function () {
+            document.getElementById('langDropdown').classList.add("hidden");
+        };
+
+        document.addEventListener("click", () => closeLangMenu());
+
+        function renderDecksMenu() {
+            const list = document.getElementById('decksMenuList');
+            const decks = getDecks();
+            const active = getActiveDeck();
+
+            list.innerHTML = decks.map(deck => {
+                const count = allCards.filter(c => (c.deckId || "de") === deck.id).length;
+                const isSelected = deck.id === active.id;
+                return `
+                    <button onclick="selectDeck('${escapeAttr(deck.id)}')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition ${isSelected ? 'accent-badge font-bold' : 'hover:bg-black/5'}">
+                        <span class="flex items-center gap-2.5 min-w-0">
+                            <span class="text-base">${escapeHtml(deck.flag || "🌐")}</span>
+                            <span class="truncate">
+                                <span class="block text-xs font-bold leading-tight">${escapeHtml(deck.label)}</span>
+                                <span class="block text-[10px] muted-text leading-tight">${count} карток</span>
+                            </span>
+                        </span>
+                        ${isSelected ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+                    </button>
+                `;
+            }).join("");
+        }
+
+        window.selectDeck = async function (deckId) {
+            userProfile.activeDeckId = deckId;
+            closeLangMenu();
+            renderLanguage();
+            renderCards();
+            renderStatsDrawer();
+            if (!document.getElementById('examplesGrammarBox').classList.contains("hidden")) {
+                populateExamplesAndGrammar();
+            }
+            if (currentUser) {
+                await setDoc(doc(db, "users", currentUser.uid), { activeDeckId: deckId }, { merge: true });
+            }
+        };
+
+        window.openNewDeckModal = function () {
+            closeLangMenu();
+            document.getElementById('newDeckName').value = "";
+            openModal('newDeckModal');
+        };
+
+        window.createNewDeck = async function () {
+            const label = document.getElementById('newDeckName').value.trim();
+            const code = (document.getElementById('newDeckCode').value.trim() || "es").toLowerCase();
+            const flag = document.getElementById('newDeckFlag').value.trim() || "🌐";
+            if (!label) return alert("Введіть назву мови або колоди.");
+
+            const newDeck = { id: "deck_" + Date.now(), code, label, flag, speech: code };
+            userProfile.customDecks = [...(userProfile.customDecks || []), newDeck];
+            userProfile.activeDeckId = newDeck.id;
+            closeModal('newDeckModal');
+            renderLanguage();
+            renderCards();
+            if (currentUser) {
+                await setDoc(doc(db, "users", currentUser.uid), {
+                    customDecks: userProfile.customDecks,
+                    activeDeckId: newDeck.id
+                }, { merge: true });
+            }
+        };
+
+        function renderLanguage() {
+            const deck = getActiveDeck();
+            document.getElementById('langFlag').innerText = deck.flag || "🇩🇪";
+            document.getElementById('langLabel').innerText = deck.label || "німецька";
+
+            document.getElementById('addScreenLangFlag').innerText = deck.flag || "🇩🇪";
+            document.getElementById('addScreenLangLabel').innerText = deck.label || "німецька";
+            document.getElementById('labelTargetLang').innerText = deck.label || "німецька";
+            document.getElementById('labelExampleLang').innerText = `Приклад використання (${deck.label || "німецька"})`;
+        }
+
+        window.toggleThemeDrawer = function () {
+            closeLangMenu();
+            closeStatsDrawer();
+            const backdrop = document.getElementById('themeBackdrop');
+            const isOpening = backdrop.classList.contains("hidden");
+            if (isOpening) {
+                backdrop.classList.remove("hidden");
+                setContentBlur(true);
+            } else {
+                closeThemeDrawer();
+            }
+        };
+
+        window.closeThemeDrawer = function () {
+            document.getElementById('themeBackdrop').classList.add("hidden");
+            setContentBlur(false);
+        };
+
+        function applyThemeClass(themeName) {
+            let resolved = themeName;
+            if (themeName === "auto") {
+                resolved = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            }
+            document.body.className = `theme-${resolved} app-bg min-h-screen w-full flex flex-col select-none`;
+        }
+
+        window.selectTheme = async function (themeName) {
+            userProfile.theme = themeName;
+            applyThemeClass(themeName);
+            closeThemeDrawer();
+            if (currentUser) {
+                await setDoc(doc(db, "users", currentUser.uid), { theme: themeName }, { merge: true });
+            }
+        };
+
+        function hideAllSubScreens() {
+            ['tabLearning', 'tabPractice', 'tabAccount', 'flashcardsScreen', 'addCardScreen'].forEach(id => {
+                document.getElementById(id).classList.add("hidden");
+            });
+        }
+
+        function setChromeHidden(hidden) {
+            document.getElementById('mainHeader').classList.toggle("hidden", hidden);
+            document.getElementById('bottomNav').classList.toggle("hidden", hidden);
+        }
+
+        // --- АВТОМАТИЧНА ТРАНСКРИПЦІЯ ПІД СЛОВОМ ---
+        async function fetchAutoTranscription(word, deckCode) {
+            const cleanWord = (word || "").trim().split(/\s+/)[0].replace(/[.,!?;:"]/g, "");
+            if (!cleanWord) return "";
+            const cacheKey = `${deckCode}:${cleanWord.toLowerCase()}`;
+            if (transcriptionCache.has(cacheKey)) {
+                return transcriptionCache.get(cacheKey);
+            }
+
+            try {
+                if (deckCode === "en") {
+                    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord.toLowerCase())}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        const entry = Array.isArray(data) ? data[0] : null;
+                        const phonetic =
+                            entry?.phonetic ||
+                            (entry?.phonetics || []).find(p => p.text)?.text ||
+                            "";
+                        if (phonetic) {
+                            const formatted = phonetic.startsWith("/") || phonetic.startsWith("[") ? phonetic : `/${phonetic}/`;
+                            transcriptionCache.set(cacheKey, formatted);
+                            return formatted;
+                        }
+                    }
+                }
+            } catch {
+                // ігноруємо мережеву помилку
+            }
+
+            transcriptionCache.set(cacheKey, "");
+            return "";
+        }
+
+        async function updateFlashcardAutoTranscription(card, deckCode) {
+            const showTrans = document.getElementById('optPronunciation')?.checked ?? true;
+            const fTr = document.getElementById('frontTranscriptionText');
+            const bTr = document.getElementById('backTranscriptionText');
+
+            if (!showTrans || !card?.word) {
+                fTr.innerText = "";
+                bTr.innerText = "";
+                return;
+            }
+
+            const tr = await fetchAutoTranscription(card.word, deckCode);
+            if (flashcardQueue[flashcardIndex]?.id !== card.id) return;
+
+            if (!showTranslationFirst) {
+                fTr.innerText = tr;
+                bTr.innerText = tr;
+            } else {
+                fTr.innerText = "";
+                bTr.innerText = tr;
+            }
+        }
+
+        // --- ОЗВУЧКА ---
+        window.speakText = function (text, langOverride = null) {
+            const soundEnabled = document.getElementById('optSound')?.checked ?? true;
+            if (!soundEnabled || !text || !("speechSynthesis" in window)) return;
+
+            loadVoicesList();
+            const targetLang = langOverride || getActiveDeck().speech || "de-DE";
+            const prefix = targetLang.split("-")[0].toLowerCase();
+
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = targetLang;
+            utter.rate = 0.96;
+
+            const select = document.getElementById('voiceSelect');
+            const selectedIdx = select && select.value !== "" ? Number(select.value) : -1;
+
+            if (selectedIdx >= 0 && availableVoices[selectedIdx]) {
+                utter.voice = availableVoices[selectedIdx];
+            } else if (availableVoices.length) {
+                const matched =
+                    availableVoices.find(v => v.lang.toLowerCase() === targetLang.toLowerCase()) ||
+                    availableVoices.find(v => v.lang.toLowerCase().startsWith(prefix));
+                if (matched) utter.voice = matched;
+            }
+
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utter);
+        };
+
+        window.speakSide = function (side) {
+            const card = flashcardQueue[flashcardIndex];
+            if (!card) return;
+            const frontIsTranslation = showTranslationFirst;
+            const isFront = side === "front";
+            const speakingTranslation = isFront ? frontIsTranslation : !frontIsTranslation;
+            if (speakingTranslation) {
+                window.speakText(card.translation, "uk-UA");
+            } else {
+                window.speakText(card.word, getActiveDeck().speech || "de-DE");
+            }
+        };
+
+        window.speakExampleText = function () {
+            const card = flashcardQueue[flashcardIndex];
+            if (!card || !card.example) return;
+            window.speakText(card.example, getActiveDeck().speech || "de-DE");
+        };
+
+        // --- ЕКРАН КАРТОК ---
+        window.openFlashcardsScreen = function (forcePracticeAll = false) {
+            const cards = getDeckCards();
+            if (!cards.length) return alert("Спочатку додайте картку через +.");
+
+            const now = Date.now();
+            const due = cards.filter(c => (c.nextReviewAt || 0) <= now);
+            if (!forcePracticeAll && !due.length) {
+                renderCards();
+                return;
+            }
+
+            flashcardQueue = due.length
+                ? due
+                : [...cards].sort((a, b) => (a.nextReviewAt || 0) - (b.nextReviewAt || 0));
+
+            flashcardIndex = 0;
+            // Чергуємо сторони: починаємо або з іноземної, або з української, і змінюємо при кожній картці
+            showTranslationFirst = Math.random() < 0.5;
+            isFlashcardFlipped = false;
+            showFlashcardExample = false;
+            showFlashcardNote = false;
+            isAnimatingSwipe = false;
+
+            closeLangMenu();
+            closeStatsDrawer();
+            closeThemeDrawer();
+            hideAllSubScreens();
+            setChromeHidden(true);
+            document.getElementById('flashcardsScreen').classList.remove("hidden");
+            renderProfile();
+            renderFlashcardView(true);
+        };
+
+        window.closeFlashcardsScreen = function () {
+            document.getElementById('flashcardsScreen').classList.add("hidden");
+            setChromeHidden(false);
+            switchTab('learning');
+            renderCards();
+        };
+
+        function renderFlashcardView(animateIn = false) {
+            const card = flashcardQueue[flashcardIndex];
+            if (!card) {
+                closeFlashcardsScreen();
+                return;
+            }
+
+            const wrap = document.getElementById('flashcardSwipeWrapper');
+            if (wrap) {
+                wrap.classList.remove("swipe-out-left", "swipe-out-right", "is-dragging", "card-enter-anim");
+                wrap.style.transform = "";
+                wrap.style.opacity = "1";
+                if (animateIn) {
+                    void wrap.offsetWidth;
+                    wrap.classList.add("card-enter-anim");
+                }
+            }
+
+            const inner = document.getElementById('flashcard3DInner');
+            if (inner) {
+                inner.style.transition = "none";
+                inner.classList.toggle("is-flipped", isFlashcardFlipped);
+                void inner.offsetWidth;
+                inner.style.transition = "";
+            }
+
+            const deck = getActiveDeck();
+            document.getElementById('frontTranscriptionText').innerText = "";
+            document.getElementById('backTranscriptionText').innerText = "";
+
+            if (!showTranslationFirst) {
+                document.getElementById('frontSideLabel').innerText = deck.label || "Слово";
+                document.getElementById('frontMainText').innerText = card.word;
+
+                document.getElementById('backSideLabel').innerText = "українська";
+                document.getElementById('backMainText').innerText = card.translation;
+                document.getElementById('backPairSubText').innerText = card.word;
+            } else {
+                document.getElementById('frontSideLabel').innerText = "українська";
+                document.getElementById('frontMainText').innerText = card.translation;
+
+                document.getElementById('backSideLabel').innerText = deck.label || "Слово";
+                document.getElementById('backMainText').innerText = card.word;
+                document.getElementById('backPairSubText').innerText = card.translation;
+            }
+
+            updateFlashcardAutoTranscription(card, deck.code);
+
+            const stepIdx = getCardStageIndex(card);
+            const stepInfo = DUOCARDS_INTERVALS[stepIdx] || DUOCARDS_INTERVALS[0];
+            const exText = showFlashcardExample && card.example
+                ? card.example
+                : (showFlashcardNote ? `Етап ${stepIdx + 1}/${DUOCARDS_INTERVALS.length} · Наступний інтервал: ${stepInfo.label}` : "");
+
+            ['front', 'back'].forEach(side => {
+                const exWrap = document.getElementById(`${side}ExampleWrap`);
+                const txt = document.getElementById(`${side}ExampleText`);
+                if (exText) {
+                    txt.innerText = exText;
+                    exWrap.classList.remove("hidden");
+                } else {
+                    txt.innerText = "";
+                    exWrap.classList.add("hidden");
+                }
+            });
+        }
+
+        window.handleCardTapFlip = function () {
+            if (isAnimatingSwipe) return;
+            if (pointerDragged) {
+                pointerDragged = false;
+                return;
+            }
+            flipFlashcard();
+        };
+
+        window.flipFlashcard = function () {
+            if (isAnimatingSwipe) return;
+            isFlashcardFlipped = !isFlashcardFlipped;
+            const inner = document.getElementById('flashcard3DInner');
+            if (inner) inner.classList.toggle("is-flipped", isFlashcardFlipped);
+        };
+
+        window.toggleFlashcardExample = function () {
+            showFlashcardExample = !showFlashcardExample;
+            if (showFlashcardExample) showFlashcardNote = false;
+            renderFlashcardView();
+        };
+
+        window.toggleFlashcardNote = function () {
+            showFlashcardNote = !showFlashcardNote;
+            if (showFlashcardNote) showFlashcardExample = false;
+            renderFlashcardView();
+        };
+
+        window.handleCardPointerDown = function (e) {
+            if (isAnimatingSwipe) return;
+            pointerStartX = e.clientX;
+            pointerDragged = false;
+            const wrap = document.getElementById('flashcardSwipeWrapper');
+            if (wrap) wrap.classList.add("is-dragging");
+        };
+
+        window.handleCardPointerMove = function (e) {
+            if (pointerStartX === null || isAnimatingSwipe) return;
+            const dx = e.clientX - pointerStartX;
+            if (Math.abs(dx) > 8) pointerDragged = true;
+            const wrap = document.getElementById('flashcardSwipeWrapper');
+            if (wrap) {
+                wrap.style.transform = `translate3d(${clamp(dx * 0.72, -160, 160)}px, 0, 0) rotate(${clamp(dx * 0.045, -11, 11)}deg)`;
+            }
+        };
+
+        window.handleCardPointerUp = function (e) {
+            if (pointerStartX === null) return;
+            const dx = e.clientX - pointerStartX;
+            pointerStartX = null;
+
+            const wrap = document.getElementById('flashcardSwipeWrapper');
+            if (wrap) wrap.classList.remove("is-dragging");
+
+            if (!isAnimatingSwipe && dx > 75) {
+                triggerSwipeCard(true, "right");
+            } else if (!isAnimatingSwipe && dx < -75) {
+                triggerSwipeCard(false, "left");
+            } else if (wrap) {
+                wrap.style.transform = "";
+            }
+        };
+
+        window.handleCardPointerCancel = function () {
+            pointerStartX = null;
+            pointerDragged = false;
+            const wrap = document.getElementById('flashcardSwipeWrapper');
+            if (wrap) {
+                wrap.classList.remove("is-dragging");
+                wrap.style.transform = "";
+            }
+        };
+
+        function triggerSwipeCard(remembered, direction) {
+            if (isAnimatingSwipe) return;
+            isAnimatingSwipe = true;
+
+            const wrap = document.getElementById('flashcardSwipeWrapper');
+            if (wrap) {
+                wrap.classList.remove("is-dragging", "card-enter-anim");
+                wrap.style.transform = "";
+                wrap.classList.add(direction === "right" ? "swipe-out-right" : "swipe-out-left");
+            }
+
+            setTimeout(async () => {
+                const card = flashcardQueue[flashcardIndex];
+                if (card) {
+                    const now = Date.now();
+                    const res = computeDuoCardsStep(card, remembered, now);
+
+                    card.srsStep = res.srsStep;
+                    card.reps = res.reps;
+                    card.lapses = res.lapses;
+                    card.lastReviewAt = res.lastReviewAt;
+                    card.nextReviewAt = res.nextReviewAt;
+                    card.status = res.status;
+
+                    if (currentUser) {
+                        await updateDoc(doc(db, "users", currentUser.uid, "cards", card.id), {
+                            srsStep: res.srsStep,
+                            reps: res.reps,
+                            lapses: res.lapses,
+                            lastReviewAt: res.lastReviewAt,
+                            nextReviewAt: res.nextReviewAt,
+                            status: res.status
+                        });
+                    }
+
+                    if (!remembered) {
+                        flashcardQueue.push(card);
+                    }
+
+                    renderCards();
+                    await recordActivity("reviewed", remembered ? 10 : 2);
+                }
+
+                // Автоматично чергуємо сторону показу (іноземна <-> українська)
+                showTranslationFirst = !showTranslationFirst;
+                isFlashcardFlipped = false;
+                showFlashcardExample = false;
+                showFlashcardNote = false;
+                flashcardIndex++;
+                isAnimatingSwipe = false;
+                renderFlashcardView(true);
+            }, 310);
+        }
+
+        // --- ЕКРАН ДОДАВАННЯ КАРТКИ ---
+        window.openAddCardScreen = function () {
+            closeLangMenu();
+            closeStatsDrawer();
+            closeThemeDrawer();
+            selectedCardSet = "";
+            updateSetBadge();
+            document.getElementById('cardWordInput').value = "";
+            document.getElementById('cardTranslationInput').value = "";
+            document.getElementById('cardExampleInput').value = "";
+            document.getElementById('examplesGrammarBox').classList.add("hidden");
+
+            hideAllSubScreens();
+            setChromeHidden(true);
+            document.getElementById('addCardScreen').classList.remove("hidden");
+            renderLanguage();
+            setTimeout(() => document.getElementById('cardTranslationInput').focus(), 40);
+        };
+
+        window.closeAddCardScreen = function () {
+            document.getElementById('addCardScreen').classList.add("hidden");
+            setChromeHidden(false);
+            switchTab('learning');
+        };
+
+        window.switchTab = function (tab) {
+            setChromeHidden(false);
+            hideAllSubScreens();
+            closeLangMenu();
+            closeStatsDrawer();
+            closeThemeDrawer();
+
+            ['learning', 'practice', 'account'].forEach(t => {
+                const cap = t.charAt(0).toUpperCase() + t.slice(1);
+                document.getElementById('nav' + cap).className = "flex flex-col items-center muted-text hover:opacity-80 transition";
+            });
+            const activeCap = tab.charAt(0).toUpperCase() + tab.slice(1);
+            document.getElementById('tab' + activeCap).classList.remove('hidden');
+            document.getElementById('nav' + activeCap).className = "flex flex-col items-center accent-text transition";
+        };
+
+        window.openModal = function (id) {
+            closeThemeDrawer();
+            closeLangMenu();
+            closeStatsDrawer();
+            if (id === "optionsModal") loadVoicesList();
+            const el = document.getElementById(id);
+            el.classList.remove("hidden");
+            el.classList.add("flex");
+        };
+
+        window.closeModal = function (id) {
+            const el = document.getElementById(id);
+            el.classList.add("hidden");
+            el.classList.remove("flex");
+        };
+
+        window.openSortCardModal = function () {
+            toggleCreateSetBox(false);
+            renderCardSetsList();
+            openModal('sortCardModal');
+        };
+
+        window.toggleCreateSetBox = function (show) {
+            document.getElementById('createSetBox').classList.toggle("hidden", !show);
+            if (show) {
+                document.getElementById('newSetNameInput').value = "";
+                setTimeout(() => document.getElementById('newSetNameInput').focus(), 30);
+            }
+        };
+
+        window.createCardSet = async function () {
+            const name = document.getElementById('newSetNameInput').value.trim();
+            if (!name) return alert("Введіть назву набору.");
+            const sets = getAllSets();
+            if (!sets.includes(name)) {
+                userProfile.customSets = [...(userProfile.customSets || []), name];
+                if (currentUser) {
+                    await setDoc(doc(db, "users", currentUser.uid), { customSets: userProfile.customSets }, { merge: true });
+                }
+            }
+            selectedCardSet = name;
+            updateSetBadge();
+            toggleCreateSetBox(false);
+            renderCardSetsList();
+        };
+
+        window.pickCardSet = function (setName) {
+            selectedCardSet = selectedCardSet === setName ? "" : setName;
+            updateSetBadge();
+            renderCardSetsList();
+        };
+
+        function updateSetBadge() {
+            const badge = document.getElementById('selectedSetBadge');
+            if (!badge) return;
+            if (selectedCardSet) {
+                badge.innerText = selectedCardSet;
+                badge.classList.remove("hidden");
+            } else {
+                badge.innerText = "";
+                badge.classList.add("hidden");
+            }
+        }
+
+        function renderCardSetsList() {
+            const box = document.getElementById('cardSetsList');
+            const sets = getAllSets();
+            box.innerHTML = sets.map(s => {
+                const active = selectedCardSet === s;
+                return `
+                    <button type="button" onclick="pickCardSet('${escapeAttr(s)}')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl border text-left text-xs font-bold transition ${active ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 hover:bg-slate-50'}">
+                        <span>${escapeHtml(s)}</span>
+                        <span class="w-4 h-4 rounded-full border flex items-center justify-center ${active ? 'border-orange-600 bg-orange-600 text-white' : 'border-slate-300'}">
+                            ${active ? '<i class="fa-solid fa-check text-[9px]"></i>' : ''}
+                        </span>
+                    </button>
+                `;
+            }).join("");
+        }
+
+        window.toggleExamplesAndGrammar = function () {
+            const box = document.getElementById('examplesGrammarBox');
+            const willOpen = box.classList.contains("hidden");
+            if (willOpen) {
+                populateExamplesAndGrammar();
+                box.classList.remove("hidden");
+            } else {
+                box.classList.add("hidden");
+            }
+        };
+
+        function populateExamplesAndGrammar() {
+            const word = document.getElementById('cardWordInput').value.trim() || "das Wort";
+            const tr = document.getElementById('cardTranslationInput').value.trim();
+            const deck = getActiveDeck();
+
+            let grammarNote = `Мова колоди: ${deck.label}. Зверніть увагу на форму слова «${word}»${tr ? ` («${tr}»)` : ""} та контекст у реченні.`;
+            let examples = [];
+
+            if (deck.code === "de") {
+                grammarNote = `У німецькій мові звертайте увагу на артикль (der / die / das), рід та відмінок слова «${word}»${tr ? ` — «${tr}»` : ""}. Дієслова часто вимагають конкретного прийменника або відмінка.`;
+                examples = [
+                    `Ich lerne heute "${word}".`,
+                    `Kannst du mir "${word}" erklären?`,
+                    `Wir benutzen "${word}" im Satz.`
+                ];
+            } else if (deck.code === "en") {
+                grammarNote = `В англійській мові важливий порядок слів у реченні та артикль/форма для «${word}»${tr ? ` — «${tr}»` : ""}. Одне слово може мати кілька значень залежно від контексту.`;
+                examples = [
+                    `I practice "${word}" every day.`,
+                    `Can you repeat "${word}" slowly?`,
+                    `This is an example with "${word}".`
+                ];
+            } else {
+                examples = [
+                    `Приклад 1 з "${word}".`,
+                    `Приклад 2 з "${word}".`
+                ];
+            }
+
+            document.getElementById('grammarHintText').innerText = grammarNote;
+            document.getElementById('exampleSuggestionsList').innerHTML = examples.map(ex => `
+                <button type="button" onclick="applyExampleToInput('${escapeAttr(ex)}')" class="w-full text-left px-3 py-2 rounded-xl pill-bg text-xs hover:opacity-85 transition flex items-center justify-between gap-2">
+                    <span>${escapeHtml(ex)}</span>
+                    <span class="text-[10px] font-bold accent-text shrink-0">Вставити</span>
+                </button>
+            `).join("");
+        }
+
+        window.applyExampleToInput = function (ex) {
+            document.getElementById('cardExampleInput').value = ex;
+        };
+
+        window.toggleCardsAccordion = function () {
+            cardsCollapsed = !cardsCollapsed;
+            document.getElementById('cardsList').classList.toggle("hidden", cardsCollapsed);
+            document.getElementById('cardsChevron').style.transform = cardsCollapsed ? "rotate(-90deg)" : "rotate(0deg)";
+        };
+
+        window.autoTranslateCard = async function () {
+            const ukText = document.getElementById('cardTranslationInput').value.trim();
+            const targetText = document.getElementById('cardWordInput').value.trim();
+            const deck = getActiveDeck();
+            const btn = document.getElementById('autoTranslateBtn');
+
+            if (!ukText && !targetText) return alert("Введіть слово або фразу для перекладу.");
+
+            btn.disabled = true;
+            btn.innerText = "...";
+            try {
+                if (ukText) {
+                    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(ukText)}&langpair=uk|${deck.code}`);
+                    const data = await res.json();
+                    if (data?.responseData?.translatedText) {
+                        document.getElementById('cardWordInput').value = data.responseData.translatedText.toLowerCase();
+                    }
+                } else {
+                    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(targetText)}&langpair=${deck.code}|uk`);
+                    const data = await res.json();
+                    if (data?.responseData?.translatedText) {
+                        document.getElementById('cardTranslationInput').value = data.responseData.translatedText.toLowerCase();
+                    }
+                }
+            } catch {
+                alert("Не вдалося перекласти автоматично.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Перекласти";
+            }
+        };
+
+        window.saveNewCard = async function () {
+            if (!currentUser) return;
+            const word = document.getElementById('cardWordInput').value.trim();
+            const translation = document.getElementById('cardTranslationInput').value.trim();
+            const example = document.getElementById('cardExampleInput').value.trim();
+            const saveToMain = document.getElementById('saveToMainDeckCheck')?.checked ?? true;
+
+            if (!word || !translation) return alert("Заповніть обидва поля: українське слово та переклад.");
+
+            const deck = getActiveDeck();
+            const now = Date.now();
+            const cardObj = {
+                word,
+                translation,
+                example,
+                setName: selectedCardSet || "",
+                inMainDeck: saveToMain,
+                deckId: deck.id,
+                status: "learn",
+                srsStep: 0,
+                reps: 0,
+                lapses: 0,
+                lastReviewAt: null,
+                nextReviewAt: now,
+                createdAt: now
+            };
+
+            const docRef = await addDoc(collection(db, "users", currentUser.uid, "cards"), cardObj);
+            allCards.unshift({ id: docRef.id, ...cardObj });
+            cardsCollapsed = false;
+            document.getElementById('cardsList').classList.remove("hidden");
+            renderCards();
+            closeAddCardScreen();
+            await recordActivity("added", 0);
+        };
+
+        // 6. ПІДТВЕРДЖЕННЯ ПЕРЕД ВИДАЛЕННЯМ КАРТКИ
+        window.deleteCard = function (event, cardId) {
+            event.stopPropagation();
+            if (!currentUser) return;
+            const target = allCards.find(c => c.id === cardId);
+            pendingDeleteCardId = cardId;
+            document.getElementById('deleteCardTargetWord').innerText = target
+                ? `«${target.translation} — ${target.word}»`
+                : "";
+            openModal('deleteCardConfirmModal');
+        };
+
+        window.confirmDeleteCard = async function () {
+            if (!currentUser || !pendingDeleteCardId) return;
+            const idToDelete = pendingDeleteCardId;
+            pendingDeleteCardId = null;
+            closeModal('deleteCardConfirmModal');
+
+            await deleteDoc(doc(db, "users", currentUser.uid, "cards", idToDelete));
+            allCards = allCards.filter(c => c.id !== idToDelete);
+            renderCards();
+            renderStatsDrawer();
+        };
+
+        function renderCards() {
+            const cards = getDeckCards();
+            const list = document.getElementById('cardsList');
+            const now = Date.now();
+            const dueCards = cards.filter(c => (c.nextReviewAt || 0) <= now);
+
+            document.getElementById('countLearn').innerText = cards.filter(c => c.status === "learn").length;
+            document.getElementById('countLearned').innerText = cards.filter(c => c.status === "learned").length;
+            document.getElementById('countMastered').innerText = cards.filter(c => c.status === "mastered").length;
+            document.getElementById('dueCountBtn').innerText = dueCards.length;
+
+            // 4. КРАФТОВИЙ СТАН "ВСІ КАРТКИ ВИВЧЕНІ", КОЛИ НЕМАЄ КАРТОК ДО ПОВТОРЕННЯ
+            const startBtn = document.getElementById('startLearningBtn');
+            const craftBox = document.getElementById('allLearnedCraftBox');
+            if (cards.length > 0 && dueCards.length === 0) {
+                startBtn.classList.add("hidden");
+                craftBox.classList.remove("hidden");
+                const earliestNext = Math.min(...cards.map(c => c.nextReviewAt || now));
+                document.getElementById('nextReviewHintText').innerText =
+                    `Наступне повторення ${formatTimeLeft(earliestNext - now)}.`;
+            } else {
+                startBtn.classList.remove("hidden");
+                craftBox.classList.add("hidden");
+            }
+
+            if (!cards.length) {
+                list.innerHTML = `<div class="md:col-span-2 card-bg border rounded-2xl text-center muted-text py-7 px-4 text-sm">Карток поки немає. Натисніть <b>+</b> праворуч, щоб додати картку.</div>`;
+                return;
+            }
+
+            // 5. ПРИБРАНО БЕЙДЖ/КНОПКУ "ВЧИТИ" НА КОЖНІЙ КАРТЦІ У СПИСКУ
+            list.innerHTML = cards.map(c => {
+                const stepIdx = getCardStageIndex(c);
+                const stepBadge = DUOCARDS_INTERVALS[stepIdx]?.label || "90 сек";
+                const meta = c.setName ? `· #${c.setName}` : "";
+                return `
+                    <div onclick="speakText('${escapeAttr(c.word)}')" class="card-bg border rounded-2xl px-4 py-3 flex items-center justify-between gap-3 cursor-pointer hover:opacity-90 transition">
+                        <div class="min-w-0">
+                            <div class="font-bold text-sm truncate">${escapeHtml(c.translation)}</div>
+                            <div class="text-xs muted-text truncate">${escapeHtml(c.word)} ${escapeHtml(meta)}</div>
+                            ${c.example ? `<div class="text-[11px] italic muted-text truncate mt-0.5">${escapeHtml(c.example)}</div>` : ""}
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="pill-bg text-[10px] font-bold px-2.5 py-1 rounded-lg muted-text">${stepBadge}</span>
+                            <button onclick="deleteCard(event, '${c.id}')" class="w-8 h-8 rounded-xl pill-bg flex items-center justify-center text-xs hover:text-rose-600 transition" title="Видалити">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        window.startQuickQuiz = function (reverse) {
+            const cards = getDeckCards();
+            if (!cards.length) return alert("Додайте хоча б одну картку у вибрану колоду.");
+            quizReverse = reverse;
+            currentQuizCard = cards[Math.floor(Math.random() * cards.length)];
+            document.getElementById('quizWord').innerText = reverse ? currentQuizCard.translation : currentQuizCard.word;
+            document.getElementById('quizInput').value = "";
+            document.getElementById('quizFeedback').innerText = "";
+            document.getElementById('quizBox').classList.remove("hidden");
+        };
+
+        window.checkQuizAnswer = async function () {
+            if (!currentQuizCard) return;
+            const ans = document.getElementById('quizInput').value.trim().toLowerCase();
+            const target = (quizReverse ? currentQuizCard.word : currentQuizCard.translation).trim().toLowerCase();
+            const fb = document.getElementById('quizFeedback');
+
+            if (ans && (target.includes(ans) || ans.includes(target))) {
+                fb.className = "text-xs font-bold mt-2 text-emerald-600";
+                fb.innerText = `Правильно! +15 XP (${quizReverse ? currentQuizCard.word : currentQuizCard.translation})`;
+                await recordActivity("reviewed", 15);
+            } else {
+                fb.className = "text-xs font-bold mt-2 text-rose-600";
+                fb.innerText = `Правильна відповідь: ${quizReverse ? currentQuizCard.word : currentQuizCard.translation}`;
+            }
+        };
+
+        window.speakRandomCard = function () {
+            const cards = getDeckCards();
+            if (!cards.length) return alert("Спочатку додайте картку.");
+            const c = cards[Math.floor(Math.random() * cards.length)];
+            window.speakText(c.word);
+        };
+
+        // --- ПОШУК ТА ДОДАВАННЯ ДРУЗІВ ---
+        window.openAddFriendModal = async function () {
+            document.getElementById('friendInput').value = "";
+            document.getElementById('friendSearchResults').innerHTML = `<div class="text-slate-400 py-2">Завантаження користувачів...</div>`;
+            openModal('addFriendModal');
+
+            try {
+                const snap = await getDocs(collection(db, "publicProfiles"));
+                registeredUsersCache = snap.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter(u => u.uid !== currentUser?.uid);
+            } catch {
+                registeredUsersCache = [];
+            }
+
+            window.searchRegisteredUsers();
+        };
+
+        window.searchRegisteredUsers = function () {
+            const q = document.getElementById('friendInput').value.trim().toLowerCase();
+            const box = document.getElementById('friendSearchResults');
+
+            const matches = registeredUsersCache.filter(u =>
+                (u.nickname || "").toLowerCase().includes(q)
+            ).slice(0, 8);
+
+            if (!matches.length) {
+                box.innerHTML = `<div class="text-slate-400 py-2">Користувачів не знайдено. Можете ввести нікнейм вручну і натиснути «Додати».</div>`;
+                return;
+            }
+
+            box.innerHTML = matches.map(u => `
+                <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 border border-slate-200">
+                    <div>
+                        <div class="font-bold text-slate-800">${escapeHtml(u.nickname || "Користувач")}</div>
+                        <div class="text-[11px] text-slate-500">XP: ${u.xp || 0} · Серія: ${u.streak || 0} дн.</div>
+                    </div>
+                    <button type="button" onclick="addFriendByNickname('${escapeAttr(u.nickname || "Користувач")}')" class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-3 py-1.5 rounded-lg text-[11px]">
+                        + Додати
+                    </button>
+                </div>
+            `).join("");
+        };
+
+        window.addFriendByNickname = async function (name) {
+            if (!currentUser || !name) return;
+            if (!userProfile.friends.some(f => f.name.toLowerCase() === name.toLowerCase())) {
+                userProfile.friends.push({ name, fires: 0 });
+                await setDoc(doc(db, "users", currentUser.uid), { friends: userProfile.friends }, { merge: true });
+                renderFriends();
+            }
+            closeModal('addFriendModal');
+        };
+
+        window.saveFriend = async function () {
+            const name = document.getElementById('friendInput').value.trim();
+            if (!name) return;
+            await window.addFriendByNickname(name);
+        };
+
+        window.sendFire = async function (idx) {
+            if (!currentUser || !userProfile.friends[idx]) return;
+            userProfile.friends[idx].fires = (userProfile.friends[idx].fires || 0) + 1;
+            await setDoc(doc(db, "users", currentUser.uid), { friends: userProfile.friends }, { merge: true });
+            renderFriends();
+        };
+
+        function renderFriends() {
+            const box = document.getElementById('friendsList');
+            if (!userProfile.friends.length) {
+                box.innerHTML = `<div class="md:col-span-2 card-bg border rounded-2xl text-center muted-text py-5 text-xs">Друзів поки немає.</div>`;
+                return;
+            }
+            box.innerHTML = userProfile.friends.map((f, i) => `
+                <div class="card-bg border rounded-2xl px-4 py-3 flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-sm">${escapeHtml(f.name)}</div>
+                        <div class="text-xs muted-text">🔥 ${f.fires || 0}</div>
+                    </div>
+                    <button onclick="sendFire(${i})" class="accent-btn text-xs font-bold px-3 py-2 rounded-xl transition">
+                        🔥 Вогник
+                    </button>
+                </div>
+            `).join("");
+        }
+
+        function escapeHtml(s) {
+            return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        function escapeAttr(s) {
+            return String(s).replace(/\/g, "\\").replace(/'/g, "\'");
+        }
+    </script>
+</body>
+</html>
