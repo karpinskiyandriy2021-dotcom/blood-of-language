@@ -1301,8 +1301,11 @@
                         activityByDay: {},
                         onboardingCompleted: false
                     };
-                    await setDoc(doc(db, "users", cred.user.uid), initialProfile);
+                    userProfile = { ...initialProfile };
+                    await setDoc(doc(db, "users", cred.user.uid), initialProfile).catch(() => {});
                     await syncPublicProfile(cred.user.uid, initialProfile);
+                    document.getElementById('authScreen').classList.add('hidden');
+                    openOnboardingScreen();
                 }
             } catch (err) {
                 alert("Помилка: " + err.message);
@@ -1361,38 +1364,42 @@
 
         async function loadAllUserData(uid) {
             const userRef = doc(db, "users", uid);
-            const snap = await getDoc(userRef);
+            try {
+                const snap = await getDoc(userRef);
 
-            if (snap.exists()) {
-                const d = snap.data();
-                userProfile = {
-                    nickname: d.nickname || currentUser.email.split("@")[0],
-                    xp: d.xp || 0,
-                    streak: d.streak || 0,
-                    freezes: d.freezes || 0,
-                    friends: Array.isArray(d.friends) ? d.friends : [],
-                    theme: d.theme || "sepia",
-                    activeDeckId: d.activeDeckId || "de",
-                    customDecks: Array.isArray(d.customDecks) ? d.customDecks : [],
-                    customSets: Array.isArray(d.customSets) ? d.customSets : [],
-                    activityByDay: d.activityByDay && typeof d.activityByDay === "object" ? d.activityByDay : {},
-                    onboardingCompleted: d.onboardingCompleted === true
-                };
-            } else {
-                userProfile = {
-                    nickname: currentUser.email.split("@")[0],
-                    xp: 0,
-                    streak: 0,
-                    freezes: 0,
-                    friends: [],
-                    theme: "sepia",
-                    activeDeckId: "de",
-                    customDecks: [],
-                    customSets: [],
-                    activityByDay: {},
-                    onboardingCompleted: false
-                };
-                await setDoc(userRef, { email: currentUser.email, ...userProfile });
+                if (snap.exists()) {
+                    const d = snap.data();
+                    userProfile = {
+                        nickname: d.nickname || currentUser.email.split("@")[0],
+                        xp: d.xp || 0,
+                        streak: d.streak || 0,
+                        freezes: d.freezes || 0,
+                        friends: Array.isArray(d.friends) ? d.friends : [],
+                        theme: d.theme || "sepia",
+                        activeDeckId: d.activeDeckId || "de",
+                        customDecks: Array.isArray(d.customDecks) ? d.customDecks : [],
+                        customSets: Array.isArray(d.customSets) ? d.customSets : [],
+                        activityByDay: d.activityByDay && typeof d.activityByDay === "object" ? d.activityByDay : {},
+                        onboardingCompleted: d.onboardingCompleted === true
+                    };
+                } else {
+                    userProfile = {
+                        nickname: currentUser.email.split("@")[0],
+                        xp: 0,
+                        streak: 0,
+                        freezes: 0,
+                        friends: [],
+                        theme: "sepia",
+                        activeDeckId: "de",
+                        customDecks: [],
+                        customSets: [],
+                        activityByDay: {},
+                        onboardingCompleted: false
+                    };
+                    await setDoc(userRef, { email: currentUser.email, ...userProfile }).catch(() => {});
+                }
+            } catch {
+                // fallback при помилці читання профілю
             }
 
             await syncPublicProfile(uid, userProfile);
@@ -1401,14 +1408,18 @@
             renderProfile();
             renderFriends();
 
-            const cardsSnap = await getDocs(collection(db, "users", uid, "cards"));
-            allCards = cardsSnap.docs.map(item => ({ id: item.id, ...item.data() }));
-            allCards.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            try {
+                const cardsSnap = await getDocs(collection(db, "users", uid, "cards"));
+                allCards = cardsSnap.docs.map(item => ({ id: item.id, ...item.data() }));
+                allCards.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            } catch {
+                allCards = [];
+            }
+
             renderCards();
             renderStatsDrawer();
 
-            // Показуємо вітальний початковий екран, якщо новий користувач ще не проходив онбординг і не має карток
-            if (!userProfile.onboardingCompleted && allCards.length === 0) {
+            if (!userProfile.onboardingCompleted) {
                 openOnboardingScreen();
             }
         }
@@ -2441,8 +2452,8 @@
             return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
 
-        function escapeAttr(s) {
-            return String(s).replace(/\/g, "\\").replace(/'/g, "\'");
+                function escapeAttr(s) {
+            return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
         }
     </script>
 </body>
