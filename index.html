@@ -446,19 +446,14 @@
                     ПОЧАТИ НАВЧАННЯ (<span id="dueCountBtn">0</span> до повторення)
                 </button>
 
-                <div id="allLearnedCraftBox" class="hidden w-full max-w-3xl card-bg border-2 border-dashed border-[var(--border-line)] rounded-2xl p-4 mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left shadow-xs">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 rounded-2xl accent-badge flex items-center justify-center text-lg shrink-0">
-                            <i class="fa-solid fa-check-double"></i>
-                        </div>
-                        <div>
-                            <div class="font-black text-sm">Всі картки вивчені!</div>
-                            <div id="nextReviewHintText" class="text-xs muted-text mt-0.5">Наразі немає карток до повторення.</div>
-                        </div>
+                <div id="allLearnedCraftBox" class="hidden w-full max-w-3xl card-bg border-2 border-dashed border-[var(--border-line)] rounded-2xl p-4 mb-4 flex items-center gap-3 text-left shadow-xs">
+                    <div class="w-11 h-11 rounded-2xl accent-badge flex items-center justify-center text-lg shrink-0">
+                        <i class="fa-solid fa-check-double"></i>
                     </div>
-                    <button type="button" onclick="openFlashcardsScreen(true)" class="px-4 py-2 rounded-xl pill-bg text-xs font-bold hover:opacity-85 transition shrink-0">
-                        Повторити поза чергою
-                    </button>
+                    <div>
+                        <div class="font-black text-sm">Всі картки вивчені!</div>
+                        <div id="nextReviewHintText" class="text-xs muted-text mt-0.5">Наразі немає карток до повторення.</div>
+                    </div>
                 </div>
 
                 <!-- Мої картки + кнопка + -->
@@ -705,43 +700,21 @@
                 </button>
             </section>
 
-            <!-- ВКЛАДКА 2: BOG -->
+            <!-- ВКЛАДКА 2: Blood of grammar -->
             <section id="tabPractice" class="hidden max-w-3xl mx-auto">
-                <h2 class="text-xl font-black mb-3">BOG</h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    <button onclick="startQuickQuiz(false)" class="card-bg border p-4 rounded-2xl text-left hover:opacity-90 transition">
-                        <i class="fa-solid fa-comments accent-text text-xl mb-2 block"></i>
-                        <div class="font-bold text-sm">Тест перекладу</div>
-                        <div class="text-xs muted-text">Перевірка слів (+15 XP)</div>
-                    </button>
-                    <button onclick="startQuickQuiz(true)" class="card-bg border p-4 rounded-2xl text-left hover:opacity-90 transition">
-                        <i class="fa-solid fa-repeat accent-text text-xl mb-2 block"></i>
-                        <div class="font-bold text-sm">Зворотний тест</div>
-                        <div class="text-xs muted-text">З української на мову колоди</div>
-                    </button>
-                    <button onclick="speakRandomCard()" class="card-bg border p-4 rounded-2xl text-left hover:opacity-90 transition">
-                        <i class="fa-solid fa-volume-high accent-text text-xl mb-2 block"></i>
-                        <div class="font-bold text-sm">Слухати</div>
-                        <div class="text-xs muted-text">Озвучка слова</div>
-                    </button>
-                    <button onclick="openFlashcardsScreen()" class="card-bg border p-4 rounded-2xl text-left hover:opacity-90 transition">
-                        <i class="fa-solid fa-layer-group accent-text text-xl mb-2 block"></i>
-                        <div class="font-bold text-sm">Картки</div>
-                        <div class="text-xs muted-text">Свайпи та 3D-переворот</div>
-                    </button>
-                </div>
+                <div class="flex flex-col items-center justify-center text-center py-6">
+                    <div class="inline-flex flex-col items-center leading-tight mb-6 select-none">
+                        <span class="text-2xl sm:text-3xl font-black tracking-tight">Blood</span>
+                        <span class="text-sm sm:text-base font-bold lowercase muted-text my-0.5 text-center w-full">of</span>
+                        <span class="text-2xl sm:text-3xl font-black tracking-tight">grammar</span>
+                    </div>
 
-                <div id="quizBox" class="hidden card-bg border rounded-2xl p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-bold uppercase accent-text">Перевірка</span>
-                        <button onclick="document.getElementById('quizBox').classList.add('hidden')" class="text-xs muted-text">Закрити</button>
+                    <div class="w-full card-bg border rounded-3xl p-8 sm:p-10 text-center shadow-xs">
+                        <div class="w-12 h-12 rounded-2xl accent-badge flex items-center justify-center text-xl mx-auto mb-3">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                        </div>
+                        <div class="text-lg sm:text-xl font-black">далі буде</div>
                     </div>
-                    <div id="quizWord" class="text-lg font-black mb-2"></div>
-                    <div class="flex gap-2">
-                        <input id="quizInput" type="text" class="flex-1 px-3 py-2 rounded-xl border card-bg text-sm focus:outline-none" placeholder="Введіть відповідь...">
-                        <button onclick="checkQuizAnswer()" class="accent-btn text-sm font-bold px-4 py-2 rounded-xl transition">Перевірити</button>
-                    </div>
-                    <p id="quizFeedback" class="text-xs font-bold mt-2"></p>
                 </div>
             </section>
 
@@ -801,7 +774,7 @@
                 </button>
                 <button onclick="switchTab('practice')" id="navPractice" class="flex flex-col items-center muted-text hover:opacity-80 transition">
                     <i class="fa-regular fa-comment-dots text-lg mb-0.5"></i>
-                    <span class="text-[11px] font-bold tracking-wider">BOG</span>
+                    <span class="text-[10px] font-bold leading-tight text-center">Blood of grammar</span>
                 </button>
                 <button onclick="switchTab('account')" id="navAccount" class="flex flex-col items-center muted-text hover:opacity-80 transition">
                     <i class="fa-regular fa-user text-lg mb-0.5"></i>
@@ -970,22 +943,20 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНЕ ВІКНО ПОШУКУ ТА ДОДАВАННЯ ДРУГА -->
+    <!-- МОДАЛЬНЕ ВІКНО ПОШУКУ ТА ДОДАВАННЯ СПРАВЖНЬОГО ДРУГА -->
     <div id="addFriendModal" onclick="closeModal('addFriendModal')" class="fixed inset-0 bg-black/55 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
         <div onclick="event.stopPropagation()" class="bg-white text-slate-900 rounded-3xl p-5 w-full max-w-md shadow-2xl">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-lg font-black">Знайти друга</h3>
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-lg font-black">Знайти справжнього друга</h3>
                 <button onclick="closeModal('addFriendModal')" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <div class="flex gap-2 mb-3">
-                <input id="friendInput" type="text" oninput="searchRegisteredUsers()" class="flex-1 px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none" placeholder="Введіть нікнейм користувача...">
-                <button onclick="saveFriend()" class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shrink-0">
-                    Додати
-                </button>
+            <p class="text-xs text-slate-500 mb-3">Введіть точний нікнейм або email зареєстрованого користувача.</p>
+            <div class="mb-3">
+                <input id="friendInput" type="text" oninput="searchRegisteredUsers()" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Пошук за нікнеймом або email...">
             </div>
-            <div id="friendSearchResults" class="space-y-1.5 max-h-56 overflow-y-auto text-xs"></div>
+            <div id="friendSearchResults" class="space-y-1.5 max-h-60 overflow-y-auto text-xs"></div>
         </div>
     </div>
 
@@ -1267,6 +1238,7 @@
                 await setDoc(doc(db, "publicProfiles", uid), {
                     uid,
                     nickname: profile.nickname || "Користувач",
+                    email: (profile.email || currentUser?.email || "").toLowerCase(),
                     xp: profile.xp || 0,
                     streak: profile.streak || 0,
                     updatedAt: Date.now()
@@ -1769,20 +1741,18 @@
         };
 
         // --- ЕКРАН КАРТОК ---
-        window.openFlashcardsScreen = function (forcePracticeAll = false) {
+        window.openFlashcardsScreen = function () {
             const cards = getDeckCards();
             if (!cards.length) return alert("Спочатку додайте картку через +.");
 
             const now = Date.now();
             const due = cards.filter(c => (c.nextReviewAt || 0) <= now);
-            if (!forcePracticeAll && !due.length) {
+            if (!due.length) {
                 renderCards();
                 return;
             }
 
-            flashcardQueue = due.length
-                ? due
-                : [...cards].sort((a, b) => (a.nextReviewAt || 0) - (b.nextReviewAt || 0));
+            flashcardQueue = due;
 
             flashcardIndex = 0;
             // Чергуємо сторони: починаємо або з іноземної, або з української, і змінюємо при кожній картці
@@ -2362,17 +2332,17 @@
             window.speakText(c.word);
         };
 
-        // --- ПОШУК ТА ДОДАВАННЯ ДРУЗІВ ---
+        // --- ПОШУК ТА ДОДАВАННЯ СПРАВЖНЬОГО ДРУГА (ТІЛЬКИ ЗАРЕЄСТРОВАНІ АКАУНТИ) ---
         window.openAddFriendModal = async function () {
             document.getElementById('friendInput').value = "";
-            document.getElementById('friendSearchResults').innerHTML = `<div class="text-slate-400 py-2">Завантаження користувачів...</div>`;
+            document.getElementById('friendSearchResults').innerHTML = `<div class="text-slate-400 py-2">Завантаження списку зареєстрованих користувачів...</div>`;
             openModal('addFriendModal');
 
             try {
                 const snap = await getDocs(collection(db, "publicProfiles"));
                 registeredUsersCache = snap.docs
                     .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(u => u.uid !== currentUser?.uid);
+                    .filter(u => (u.uid || u.id) !== currentUser?.uid);
             } catch {
                 registeredUsersCache = [];
             }
@@ -2384,42 +2354,54 @@
             const q = document.getElementById('friendInput').value.trim().toLowerCase();
             const box = document.getElementById('friendSearchResults');
 
-            const matches = registeredUsersCache.filter(u =>
-                (u.nickname || "").toLowerCase().includes(q)
-            ).slice(0, 8);
-
-            if (!matches.length) {
-                box.innerHTML = `<div class="text-slate-400 py-2">Користувачів не знайдено. Можете ввести нікнейм вручну і натиснути «Додати».</div>`;
+            if (!q) {
+                box.innerHTML = `<div class="text-slate-400 py-3 text-center">Почніть вводити нікнейм або email друга, щоб знайти його акаунт.</div>`;
                 return;
             }
 
-            box.innerHTML = matches.map(u => `
-                <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 border border-slate-200">
-                    <div>
-                        <div class="font-bold text-slate-800">${escapeHtml(u.nickname || "Користувач")}</div>
-                        <div class="text-[11px] text-slate-500">XP: ${u.xp || 0} · Серія: ${u.streak || 0} дн.</div>
+            const matches = registeredUsersCache.filter(u => {
+                const nick = (u.nickname || "").toLowerCase();
+                const mail = (u.email || "").toLowerCase();
+                return nick.includes(q) || (mail && mail.includes(q));
+            }).slice(0, 8);
+
+            if (!matches.length) {
+                box.innerHTML = `<div class="text-slate-500 py-3 text-center">Зареєстрованого користувача з таким нікнеймом або email не знайдено.</div>`;
+                return;
+            }
+
+            box.innerHTML = matches.map(u => {
+                const uid = u.uid || u.id;
+                const alreadyAdded = userProfile.friends.some(f => f.uid === uid || f.name.toLowerCase() === (u.nickname || "").toLowerCase());
+                return `
+                    <div class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                        <div class="min-w-0 pr-2">
+                            <div class="font-bold text-slate-800 truncate">${escapeHtml(u.nickname || "Користувач")}</div>
+                            <div class="text-[11px] text-slate-500">XP: ${u.xp || 0} · Серія: ${u.streak || 0} дн.</div>
+                        </div>
+                        ${alreadyAdded
+                            ? `<span class="text-[11px] font-bold text-emerald-600 px-2.5 py-1 rounded-lg bg-emerald-50 shrink-0">Вже у друзях</span>`
+                            : `<button type="button" onclick="addVerifiedFriend('${escapeAttr(uid)}')" class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-3 py-1.5 rounded-lg text-[11px] shrink-0 transition">+ Додати</button>`
+                        }
                     </div>
-                    <button type="button" onclick="addFriendByNickname('${escapeAttr(u.nickname || "Користувач")}')" class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-3 py-1.5 rounded-lg text-[11px]">
-                        + Додати
-                    </button>
-                </div>
-            `).join("");
+                `;
+            }).join("");
         };
 
-        window.addFriendByNickname = async function (name) {
-            if (!currentUser || !name) return;
-            if (!userProfile.friends.some(f => f.name.toLowerCase() === name.toLowerCase())) {
-                userProfile.friends.push({ name, fires: 0 });
+        window.addVerifiedFriend = async function (friendUid) {
+            if (!currentUser || !friendUid) return;
+            const targetUser = registeredUsersCache.find(u => (u.uid || u.id) === friendUid);
+            if (!targetUser) return alert("Цей акаунт не знайдено.");
+
+            const uid = targetUser.uid || targetUser.id;
+            const name = targetUser.nickname || "Користувач";
+
+            if (!userProfile.friends.some(f => f.uid === uid)) {
+                userProfile.friends.push({ uid, name, fires: 0 });
                 await setDoc(doc(db, "users", currentUser.uid), { friends: userProfile.friends }, { merge: true });
                 renderFriends();
             }
             closeModal('addFriendModal');
-        };
-
-        window.saveFriend = async function () {
-            const name = document.getElementById('friendInput').value.trim();
-            if (!name) return;
-            await window.addFriendByNickname(name);
         };
 
         window.sendFire = async function (idx) {
